@@ -7,18 +7,40 @@
     <title>Pet Project</title>
   </head>
   <style>
-    body {
-      background: #000;
+    * {
+      box-sizing: border-box;
     }
 
-    canvas {
-      margin: 50px auto;
+    body {
+      background: #000;
+      background-image: url(./assets/wallpaper.png);
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      position: relative;
+      border: 5px solid #000;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      margin: 0 auto;
+      transform: translateY(-50%);
+      border: 3px solid #5e81ac;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      background-color: #2e3440;
       display: block;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
     }
   </style>
 
   <body>
+    <canvas id="canvas"></canvas>
     <script src="bundle.js"></script>
   </body>
 </html>
