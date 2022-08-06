@@ -5,7 +5,7 @@ export class Player extends GameObject {
   public readonly width = 64;
   public readonly height = 128;
 
-  public speed = 3;
+  public speed = 5;
   public posX!: number;
   public posY!: number;
 

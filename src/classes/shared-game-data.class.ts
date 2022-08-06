@@ -6,4 +6,5 @@ export class SharedGameData {
     height: 0,
   };
   public gameObjects: Array<GameObject> = [];
+  public deltaTime = 0;
 }

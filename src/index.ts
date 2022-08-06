@@ -1,6 +1,9 @@
 import { Canvas } from "./classes/canvas.class";
+import { GameObject } from "./classes/game-object.class";
 import { Game } from "./classes/game.class";
 import { Player } from "./classes/player.class";
+
+const gameObjects: Array<GameObject> = [new Player(100, 100)];
 
 const main = () => {
   const canvas = new Canvas({
@@ -8,7 +11,7 @@ const main = () => {
   });
 
   const game = new Game(canvas);
-  game.addEntity(new Player(100, 100));
+  game.addObjects(gameObjects);
   game.start();
 };
 

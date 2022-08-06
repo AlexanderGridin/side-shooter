@@ -4,8 +4,11 @@ import { SharedGameData } from "./shared-game-data.class";
 
 export class Game {
   private readonly canvas!: Canvas;
-  private readonly gameObjects: Array<GameObject> = [];
   private readonly data: SharedGameData = new SharedGameData();
+
+  private gameObjects: Array<GameObject> = [];
+  private prevTimeStamp = 0;
+  private deltaTime = 0;
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
@@ -18,12 +21,19 @@ export class Game {
     this.data.gameObjects = this.gameObjects;
   }
 
-  public start(): void {
+  public start(timestamp = 0): void {
+    this.handleTimeStamp(timestamp);
     this.update();
     this.clear();
     this.draw();
 
     requestAnimationFrame(this.start.bind(this));
+  }
+
+  private handleTimeStamp(timestamp: number): void {
+    this.deltaTime = timestamp - this.prevTimeStamp;
+    this.prevTimeStamp = timestamp;
+    this.data.deltaTime = this.deltaTime;
   }
 
   private clear(): void {
@@ -42,8 +52,13 @@ export class Game {
     );
   }
 
-  public addEntity(gameObject: GameObject): void {
+  public addObject(gameObject: GameObject): void {
     this.gameObjects.push(gameObject);
+    this.data.gameObjects = this.gameObjects;
+  }
+
+  public addObjects(gameObjects: Array<GameObject>): void {
+    this.gameObjects = this.gameObjects.concat(gameObjects);
     this.data.gameObjects = this.gameObjects;
   }
 }
