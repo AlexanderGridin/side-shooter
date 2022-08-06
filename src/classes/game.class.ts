@@ -1,17 +1,17 @@
 import { Canvas } from "./canvas.class";
-import { Entity } from "./entity.class";
+import { GameObject } from "./game-object.class";
 
 export class SharedGameData {
   public geometry: { width: number; height: number } = {
     width: 0,
     height: 0,
   };
-  public entities: Array<Entity> = [];
+  public gameObjects: Array<GameObject> = [];
 }
 
 export class Game {
   private readonly canvas!: Canvas;
-  private readonly entities: Array<Entity> = [];
+  private readonly gameObjects: Array<GameObject> = [];
   private readonly data: SharedGameData = new SharedGameData();
 
   constructor(canvas: Canvas) {
@@ -22,7 +22,7 @@ export class Game {
   private initSharedData(): void {
     this.data.geometry.width = this.canvas.width;
     this.data.geometry.height = this.canvas.height;
-    this.data.entities = this.entities;
+    this.data.gameObjects = this.gameObjects;
   }
 
   public start(): void {
@@ -38,15 +38,19 @@ export class Game {
   }
 
   private update(): void {
-    this.entities.forEach((entity) => entity.update(this.data));
+    this.gameObjects.forEach((gameObject: GameObject) =>
+      gameObject.update(this.data)
+    );
   }
 
   private draw(): void {
-    this.entities.forEach((entity) => entity.draw(this.canvas.context));
+    this.gameObjects.forEach((gameObject: GameObject) =>
+      gameObject.draw(this.canvas.context)
+    );
   }
 
-  public addEntity(entity: Entity): void {
-    this.entities.push(entity);
-    this.data.entities = this.entities;
+  public addEntity(gameObject: GameObject): void {
+    this.gameObjects.push(gameObject);
+    this.data.gameObjects = this.gameObjects;
   }
 }

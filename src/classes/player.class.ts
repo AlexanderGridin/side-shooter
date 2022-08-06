@@ -1,7 +1,7 @@
-import { Entity } from "./entity.class";
+import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./game.class";
 
-export class Player extends Entity {
+export class Player extends GameObject {
   public readonly width = 64;
   public readonly height = 128;
 
