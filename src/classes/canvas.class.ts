@@ -29,8 +29,9 @@ export class Canvas {
 
     this.context = context;
 
-    this.element.width = width || 640;
-    this.element.height = height || 480;
+    // TODO: need to clarify why need 20 as correction
+    this.element.width = width || window.innerWidth - 20;
+    this.element.height = height || window.innerHeight - 20;
   }
 
   public get width(): number {

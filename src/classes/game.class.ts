@@ -10,6 +10,8 @@ export class Game {
   private prevTimeStamp = 0;
   private deltaTime = 0;
 
+  private animationRequest!: number;
+
   constructor(canvas: Canvas) {
     this.canvas = canvas;
     this.initSharedData();
@@ -27,7 +29,11 @@ export class Game {
     this.clear();
     this.draw();
 
-    requestAnimationFrame(this.start.bind(this));
+    this.animationRequest = requestAnimationFrame(this.start.bind(this));
+  }
+
+  public stop(): void {
+    cancelAnimationFrame(this.animationRequest);
   }
 
   private handleTimeStamp(timestamp: number): void {
@@ -50,6 +56,27 @@ export class Game {
     this.gameObjects.forEach((gameObject: GameObject) =>
       gameObject.draw(this.canvas.context)
     );
+
+    this.drawHelpers();
+  }
+
+  private drawHelpers(): void {
+    this.canvas.context.save();
+
+    this.canvas.context.lineWidth = 1;
+    this.canvas.context.strokeStyle = "#BF616A";
+
+    this.canvas.context.beginPath();
+    this.canvas.context.moveTo(this.canvas.width * 0.5, 0);
+    this.canvas.context.lineTo(this.canvas.width * 0.5, this.canvas.height);
+    this.canvas.context.stroke();
+
+    this.canvas.context.beginPath();
+    this.canvas.context.moveTo(0, this.canvas.height * 0.5);
+    this.canvas.context.lineTo(this.canvas.width, this.canvas.height * 0.5);
+    this.canvas.context.stroke();
+
+    this.canvas.context.restore();
   }
 
   public addObject(gameObject: GameObject): void {
@@ -57,8 +84,10 @@ export class Game {
     this.data.gameObjects = this.gameObjects;
   }
 
-  public addObjects(gameObjects: Array<GameObject>): void {
+  public addObjects(gameObjects: Array<GameObject>): this {
     this.gameObjects = this.gameObjects.concat(gameObjects);
     this.data.gameObjects = this.gameObjects;
+
+    return this;
   }
 }
