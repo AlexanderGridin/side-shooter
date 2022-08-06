@@ -1,5 +1,5 @@
 import { GameObject } from "./game-object.class";
-import { SharedGameData } from "./game.class";
+import { SharedGameData } from "./shared-game-data.class";
 
 export class Player extends GameObject {
   public readonly width = 64;
