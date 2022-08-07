@@ -1,3 +1,4 @@
+import { InputKey } from "../enumerations/input-key.enum";
 import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./shared-game-data.class";
 
@@ -53,7 +54,10 @@ export class Player extends GameObject {
     this.posY += this.speed * this.directionY;
   }
 
-  public draw(context: CanvasRenderingContext2D): void {
+  public draw(
+    context: CanvasRenderingContext2D,
+    gameData: SharedGameData
+  ): void {
     // Stack Overflow link about rotation
     // https://stackoverflow.com/questions/17125632/html5-canvas-rotate-object-without-moving-coordinates
 
@@ -76,7 +80,9 @@ export class Player extends GameObject {
       this.height
     );
 
-    // this.drawHelpers(context);
+    if (gameData.inputHandler.isKeyPressed(InputKey.X)) {
+      this.drawHelpers(context);
+    }
 
     context.restore();
   }

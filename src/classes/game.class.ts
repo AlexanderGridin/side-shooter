@@ -1,10 +1,12 @@
 import { Canvas } from "./canvas.class";
 import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./shared-game-data.class";
+import { InputHandler } from "./input-handler.class";
 
 export class Game {
   private readonly canvas!: Canvas;
   private readonly data: SharedGameData = new SharedGameData();
+  private readonly inputHandler!: InputHandler;
 
   private gameObjects: Array<GameObject> = [];
   private prevTimeStamp = 0;
@@ -14,6 +16,8 @@ export class Game {
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
+    this.inputHandler = new InputHandler();
+
     this.initSharedData();
   }
 
@@ -21,6 +25,7 @@ export class Game {
     this.data.geometry.width = this.canvas.width;
     this.data.geometry.height = this.canvas.height;
     this.data.gameObjects = this.gameObjects;
+    this.data.inputHandler = this.inputHandler;
   }
 
   public start(timestamp = 0): void {
@@ -54,7 +59,7 @@ export class Game {
 
   private draw(): void {
     this.gameObjects.forEach((gameObject: GameObject) =>
-      gameObject.draw(this.canvas.context)
+      gameObject.draw(this.canvas.context, this.data)
     );
 
     this.drawHelpers();
