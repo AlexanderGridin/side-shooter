@@ -2,7 +2,7 @@ import { Canvas } from "./classes/canvas.class";
 import { Game } from "./classes/game.class";
 import { Player } from "./classes/player.class";
 import { FpsCounter } from "./classes/fps-counter.class";
-import { useToggler } from "./utils/user-toggler.util";
+import { useToggler } from "./utils/use-toggler.util";
 
 const main = () => {
   const canvas = new Canvas({
