@@ -23,6 +23,8 @@ export class Player extends GameObject {
   private rotationSpeed = 1;
   private rotationDirection = 1;
 
+  private isShowHelpers = false;
+
   constructor(posX: number, posY: number) {
     super();
 
@@ -35,29 +37,70 @@ export class Player extends GameObject {
       gameData.geometry
     );
 
+    if (gameData.inputHandler.isKeyPressed(InputKey.X)) {
+      this.isShowHelpers = true;
+    }
+
+    if (gameData.inputHandler.isKeyPressed(InputKey.C)) {
+      this.isShowHelpers = false;
+    }
+
+    if (gameData.inputHandler.isKeyPressed(InputKey.K)) {
+      if (this.angle > 360 || this.angle < -360) {
+        this.angle = 0;
+      } else {
+        this.angle += this.rotationSpeed * this.rotationDirection;
+      }
+    }
+
+    if (gameData.inputHandler.isKeyPressed(InputKey.J)) {
+      if (this.angle > 360 || this.angle < -360) {
+        this.angle = 0;
+      } else {
+        this.angle += this.rotationSpeed * -this.rotationDirection;
+      }
+    }
+
+    if (gameData.inputHandler.isKeyPressed(InputKey.L)) {
+      this.angle = 0;
+    }
+
     if (xCollision) {
-      this.directionX *= -1;
-      this.rotationDirection *= -1;
+      if (this.posX < this.width * 0.5) {
+        this.posX = this.width * 0.5;
+        return;
+      }
+      // this.posX + this.width * 0.5 > gameData.geometry.width
+      this.posX = gameData.geometry.width - this.width * 0.5;
+      return;
     }
 
     if (yCollision) {
       this.directionY *= -1;
     }
 
-    if (this.angle > 360) {
-      this.angle = 0;
-    } else {
-      this.angle += this.rotationSpeed * this.rotationDirection;
+    if (gameData.inputHandler.isKeyPressed(InputKey.W)) {
+      this.posY -= this.speed * this.directionY;
+      return;
     }
 
-    this.posX += this.speed * this.directionX;
-    this.posY += this.speed * this.directionY;
+    if (gameData.inputHandler.isKeyPressed(InputKey.S)) {
+      this.posY += this.speed * this.directionY;
+      return;
+    }
+
+    if (gameData.inputHandler.isKeyPressed(InputKey.D)) {
+      this.posX += this.speed * this.directionX;
+      return;
+    }
+
+    if (gameData.inputHandler.isKeyPressed(InputKey.A)) {
+      this.posX -= this.speed * this.directionX;
+      return;
+    }
   }
 
-  public draw(
-    context: CanvasRenderingContext2D,
-    gameData: SharedGameData
-  ): void {
+  public draw(context: CanvasRenderingContext2D): void {
     // Stack Overflow link about rotation
     // https://stackoverflow.com/questions/17125632/html5-canvas-rotate-object-without-moving-coordinates
 
@@ -80,14 +123,22 @@ export class Player extends GameObject {
       this.height
     );
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.X)) {
-      this.drawHelpers(context);
+    if (this.isShowHelpers) {
+      this.drawHelpers({
+        context,
+      });
     }
 
     context.restore();
   }
 
-  private drawHelpers(context: CanvasRenderingContext2D): void {
+  private drawHelpers({
+    context,
+    isShowCorners,
+  }: {
+    context: CanvasRenderingContext2D;
+    isShowCorners?: boolean;
+  }): void {
     const width = 10;
     const height = 10;
 
@@ -96,32 +147,34 @@ export class Player extends GameObject {
     // center
     context.fillRect(-5, -5, 10, 10);
 
-    //top right
-    context.fillRect(
-      this.width * 0.5 - width,
-      this.height * -0.5,
-      width,
-      height
-    );
+    if (isShowCorners) {
+      //top right
+      context.fillRect(
+        this.width * 0.5 - width,
+        this.height * -0.5,
+        width,
+        height
+      );
 
-    //bottom right
-    context.fillRect(
-      this.width * 0.5 - width,
-      this.height * 0.5 - height,
-      width,
-      height
-    );
+      //bottom right
+      context.fillRect(
+        this.width * 0.5 - width,
+        this.height * 0.5 - height,
+        width,
+        height
+      );
 
-    //bottom left
-    context.fillRect(
-      this.width * -0.5,
-      this.height * 0.5 - height,
-      width,
-      height
-    );
+      //bottom left
+      context.fillRect(
+        this.width * -0.5,
+        this.height * 0.5 - height,
+        width,
+        height
+      );
 
-    //top left
-    context.fillRect(this.width * -0.5, this.height * -0.5, width, height);
+      //top left
+      context.fillRect(this.width * -0.5, this.height * -0.5, width, height);
+    }
 
     // direction line
     context.strokeStyle = "#BF616A";

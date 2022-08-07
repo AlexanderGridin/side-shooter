@@ -59,7 +59,7 @@ export class Game {
 
   private draw(): void {
     this.gameObjects.forEach((gameObject: GameObject) =>
-      gameObject.draw(this.canvas.context, this.data)
+      gameObject.draw(this.canvas.context)
     );
 
     this.drawHelpers();

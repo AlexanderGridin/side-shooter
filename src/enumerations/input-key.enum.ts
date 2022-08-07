@@ -6,4 +6,6 @@ export enum InputKey {
   J = "KeyJ",
   K = "KeyK",
   X = "KeyX",
+  C = "KeyC",
+  L = "KeyL",
 }
