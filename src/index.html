@@ -12,16 +12,12 @@
     }
 
     body {
-      background: #000;
-      background-image: url(./assets/wallpaper.png);
-      background-position: center;
-      background-size: cover;
-      background-repeat: no-repeat;
+      background-color: #2e3440;
       height: 100vh;
       margin: 0;
       padding: 0;
       position: relative;
-      border: 5px solid #000;
+      border: 5px solid #3b4252;
     }
 
     #canvas {
@@ -36,10 +32,23 @@
       box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
       background-color: #2e3440;
       display: block;
+      z-index: 1;
+    }
+
+    button {
+      position: absolute;
+      top: 10px;
+      width: 100px;
+      left: 0;
+      right: 0;
+      margin: 0 auto;
+      z-index: 2;
+      font-size: 18px;
     }
   </style>
 
   <body>
+    <button type="button"></button>
     <canvas id="canvas"></canvas>
     <script src="bundle.js"></script>
   </body>
