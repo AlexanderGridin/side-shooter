@@ -11,7 +11,8 @@ export class Player extends GameObject {
   public readonly width = 64;
   public readonly height = 64;
 
-  public speed = 3;
+  private initialSpeed = 3;
+  public speed = this.initialSpeed;
 
   public posX!: number;
   public posY!: number;
@@ -19,7 +20,8 @@ export class Player extends GameObject {
   public directionX = 1;
   public directionY = 1;
 
-  private angle = 0;
+  private initialAngle = 0;
+  private angle = this.initialAngle;
   private rotationSpeed = 1;
   private rotationDirection = 1;
 
@@ -46,57 +48,58 @@ export class Player extends GameObject {
     }
 
     if (gameData.inputHandler.isKeyPressed(InputKey.K)) {
-      if (this.angle > 360 || this.angle < -360) {
-        this.angle = 0;
+      if (this.angle >= 360 || this.angle <= -360) {
+        this.angle = 0 + this.rotationSpeed * this.rotationDirection;
       } else {
         this.angle += this.rotationSpeed * this.rotationDirection;
       }
     }
 
     if (gameData.inputHandler.isKeyPressed(InputKey.J)) {
-      if (this.angle > 360 || this.angle < -360) {
-        this.angle = 0;
+      if (this.angle >= 360 || this.angle <= -360) {
+        this.angle = 0 + this.rotationSpeed * -this.rotationDirection;
       } else {
         this.angle += this.rotationSpeed * -this.rotationDirection;
       }
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.L)) {
+    if (gameData.inputHandler.isKeyPressed(InputKey.G)) {
       this.angle = 0;
     }
 
-    if (xCollision) {
-      if (this.posX < this.width * 0.5) {
-        this.posX = this.width * 0.5;
+    if (gameData.inputHandler.isKeyPressed(InputKey.W)) {
+      this.posY += this.speed * Math.sin(((this.angle - 90) * Math.PI) / 180);
+      this.posX += this.speed * Math.cos(((this.angle - 90) * Math.PI) / 180);
+
+      if (yCollision && (this.angle <= -90 || this.angle >= 90)) {
+        this.speed = this.initialSpeed;
         return;
       }
-      // this.posX + this.width * 0.5 > gameData.geometry.width
-      this.posX = gameData.geometry.width - this.width * 0.5;
-      return;
-    }
-
-    if (yCollision) {
-      this.directionY *= -1;
-    }
-
-    if (gameData.inputHandler.isKeyPressed(InputKey.W)) {
-      this.posY -= this.speed * this.directionY;
-      return;
     }
 
     if (gameData.inputHandler.isKeyPressed(InputKey.S)) {
-      this.posY += this.speed * this.directionY;
-      return;
+      this.posY -= this.speed * Math.sin(((this.angle - 90) * Math.PI) / 180);
+      this.posX -= this.speed * Math.cos(((this.angle - 90) * Math.PI) / 180);
+
+      if (
+        xCollision &&
+        (this.posX >= this.width * 0.5 || this.posX >= this.width * -0.5)
+      ) {
+        this.speed = this.initialSpeed;
+        return;
+      }
+
+      if (
+        yCollision &&
+        (this.posY >= this.height * 0.5 || this.posY >= this.height * -0.5)
+      ) {
+        this.speed = this.initialSpeed;
+        return;
+      }
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.D)) {
-      this.posX += this.speed * this.directionX;
-      return;
-    }
-
-    if (gameData.inputHandler.isKeyPressed(InputKey.A)) {
-      this.posX -= this.speed * this.directionX;
-      return;
+    if (xCollision || yCollision) {
+      this.speed = 0;
     }
   }
 
@@ -195,6 +198,8 @@ export class Player extends GameObject {
       this.width * -0.5,
       this.height * -0.5 - 10
     );
+
+    context.fillText(`${this.angle}`, this.width * -0.5, 0);
   }
 
   private checkWorldCollision(gameGeometry: {
@@ -203,11 +208,11 @@ export class Player extends GameObject {
   }): CollisionData {
     return {
       xCollision:
-        this.posX < this.width * 0.5 ||
-        this.posX + this.width * 0.5 > gameGeometry.width,
+        this.posX - this.speed < this.width * 0.5 ||
+        this.posX + this.speed + this.width * 0.5 > gameGeometry.width,
       yCollision:
-        this.posY < this.height * 0.5 ||
-        this.posY + this.height * 0.5 > gameGeometry.height,
+        this.posY - this.speed < this.height * 0.5 ||
+        this.posY + this.speed + this.height * 0.5 > gameGeometry.height,
     };
   }
 }
