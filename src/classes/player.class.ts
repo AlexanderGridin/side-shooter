@@ -25,6 +25,9 @@ export class Player extends GameObject {
   private rotationSpeed = 1;
   private rotationDirection = 1;
 
+  private collisionData!: CollisionData;
+  private gameData!: SharedGameData;
+
   private isShowHelpers = false;
 
   constructor(posX: number, posY: number) {
@@ -35,19 +38,45 @@ export class Player extends GameObject {
   }
 
   public update(gameData: SharedGameData): void {
-    const { xCollision, yCollision } = this.checkWorldCollision(
-      gameData.geometry
-    );
+    this.collisionData = this.getCollisionData(gameData.geometry);
+    this.gameData = gameData;
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.X)) {
+    this.handleHelpers();
+    this.calculateMovement();
+    this.handleWorldCollision();
+  }
+
+  private getCollisionData(gameGeometry: {
+    width: number;
+    height: number;
+  }): CollisionData {
+    return {
+      xCollision:
+        this.posX - this.speed < this.width * 0.5 ||
+        this.posX + this.speed + this.width * 0.5 > gameGeometry.width,
+      yCollision:
+        this.posY - this.speed < this.height * 0.5 ||
+        this.posY + this.speed + this.height * 0.5 > gameGeometry.height,
+    };
+  }
+
+  private handleHelpers(): void {
+    const { inputHandler } = this.gameData;
+
+    if (inputHandler.isKeyPressed(InputKey.X)) {
       this.isShowHelpers = true;
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.C)) {
+    if (inputHandler.isKeyPressed(InputKey.C)) {
       this.isShowHelpers = false;
     }
+  }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.K)) {
+  private calculateMovement(): void {
+    const { inputHandler } = this.gameData;
+    const { xCollision, yCollision } = this.collisionData;
+
+    if (inputHandler.isKeyPressed(InputKey.K)) {
       if (this.angle >= 360 || this.angle <= -360) {
         this.angle = 0 + this.rotationSpeed * this.rotationDirection;
       } else {
@@ -55,7 +84,7 @@ export class Player extends GameObject {
       }
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.J)) {
+    if (inputHandler.isKeyPressed(InputKey.J)) {
       if (this.angle >= 360 || this.angle <= -360) {
         this.angle = 0 + this.rotationSpeed * -this.rotationDirection;
       } else {
@@ -63,11 +92,11 @@ export class Player extends GameObject {
       }
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.G)) {
+    if (inputHandler.isKeyPressed(InputKey.G)) {
       this.angle = 0;
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.W)) {
+    if (inputHandler.isKeyPressed(InputKey.W)) {
       this.posY += this.speed * Math.sin(((this.angle - 90) * Math.PI) / 180);
       this.posX += this.speed * Math.cos(((this.angle - 90) * Math.PI) / 180);
 
@@ -77,7 +106,7 @@ export class Player extends GameObject {
       }
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.S)) {
+    if (inputHandler.isKeyPressed(InputKey.S)) {
       this.posY -= this.speed * Math.sin(((this.angle - 90) * Math.PI) / 180);
       this.posX -= this.speed * Math.cos(((this.angle - 90) * Math.PI) / 180);
 
@@ -97,6 +126,10 @@ export class Player extends GameObject {
         return;
       }
     }
+  }
+
+  private handleWorldCollision(): void {
+    const { xCollision, yCollision } = this.collisionData;
 
     if (xCollision || yCollision) {
       this.speed = 0;
@@ -187,7 +220,7 @@ export class Player extends GameObject {
     context.stroke();
 
     // position text
-    context.font = "16px Arial";
+    context.font = "16px 'Yanone Kaffeesatz'";
     context.fillText(
       `x: ${this.posX.toFixed(0)}`,
       this.width * -0.5,
@@ -200,19 +233,5 @@ export class Player extends GameObject {
     );
 
     context.fillText(`${this.angle}`, this.width * -0.5, 0);
-  }
-
-  private checkWorldCollision(gameGeometry: {
-    width: number;
-    height: number;
-  }): CollisionData {
-    return {
-      xCollision:
-        this.posX - this.speed < this.width * 0.5 ||
-        this.posX + this.speed + this.width * 0.5 > gameGeometry.width,
-      yCollision:
-        this.posY - this.speed < this.height * 0.5 ||
-        this.posY + this.speed + this.height * 0.5 > gameGeometry.height,
-    };
   }
 }
