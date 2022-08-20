@@ -1,4 +1,5 @@
 import { InputKey } from "../enumerations/input-key.enum";
+import { colors } from "../static-data/colors";
 import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./shared-game-data.class";
 
@@ -22,13 +23,13 @@ export class Player extends GameObject {
 
   private initialAngle = 0;
   private angle = this.initialAngle;
-  private rotationSpeed = 1;
+  private rotationSpeed = 3;
   private rotationDirection = 1;
 
   private collisionData!: CollisionData;
   private gameData!: SharedGameData;
 
-  private isShowHelpers = false;
+  private isShowHelpers = true;
 
   constructor(posX: number, posY: number) {
     super();
@@ -142,7 +143,7 @@ export class Player extends GameObject {
 
     context.save();
 
-    context.fillStyle = "#A3BE8C";
+    context.fillStyle = colors.nord.green;
 
     // Note that the context is now in its rotated state.
     // That means drawing position [0,0] is visually at [ posX + this.width * 0.5, posY + this.height * 0.5 ].
@@ -178,7 +179,7 @@ export class Player extends GameObject {
     const width = 10;
     const height = 10;
 
-    context.fillStyle = "#BF616A";
+    context.fillStyle = colors.nord.red;
 
     // center
     context.fillRect(-5, -5, 10, 10);
@@ -213,7 +214,7 @@ export class Player extends GameObject {
     }
 
     // direction line
-    context.strokeStyle = "#BF616A";
+    context.strokeStyle = colors.nord.red;
     context.beginPath();
     context.moveTo(0, this.height * -0.5);
     context.lineTo(0, 0);
@@ -232,6 +233,22 @@ export class Player extends GameObject {
       this.height * -0.5 - 10
     );
 
-    context.fillText(`${this.angle}`, this.width * -0.5, 0);
+    context.fillText(
+      `Angle: ${this.angle}`,
+      this.width * -0.5,
+      this.height * 0.5 - 5
+    );
+
+    context.fillText(
+      `Speed: ${this.speed}`,
+      this.width * -0.5,
+      this.height * 0.5 + 17
+    );
+
+    context.fillText(
+      `Rotation spd: ${this.rotationSpeed}`,
+      this.width * -0.5,
+      this.height * 0.5 + 34
+    );
   }
 }
