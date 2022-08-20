@@ -1,4 +1,5 @@
 import { InputKey } from "../enumerations/input-key.enum";
+import { colors } from "../static-data/colors";
 import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./shared-game-data.class";
 
@@ -22,10 +23,13 @@ export class Player extends GameObject {
 
   private initialAngle = 0;
   private angle = this.initialAngle;
-  private rotationSpeed = 1;
+  private rotationSpeed = 3;
   private rotationDirection = 1;
 
-  private isShowHelpers = false;
+  private collisionData!: CollisionData;
+  private gameData!: SharedGameData;
+
+  private isShowHelpers = true;
 
   constructor(posX: number, posY: number) {
     super();
@@ -35,19 +39,45 @@ export class Player extends GameObject {
   }
 
   public update(gameData: SharedGameData): void {
-    const { xCollision, yCollision } = this.checkWorldCollision(
-      gameData.geometry
-    );
+    this.collisionData = this.getCollisionData(gameData.geometry);
+    this.gameData = gameData;
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.X)) {
+    this.handleHelpers();
+    this.calculateMovement();
+    this.handleWorldCollision();
+  }
+
+  private getCollisionData(gameGeometry: {
+    width: number;
+    height: number;
+  }): CollisionData {
+    return {
+      xCollision:
+        this.posX - this.speed < this.width * 0.5 ||
+        this.posX + this.speed + this.width * 0.5 > gameGeometry.width,
+      yCollision:
+        this.posY - this.speed < this.height * 0.5 ||
+        this.posY + this.speed + this.height * 0.5 > gameGeometry.height,
+    };
+  }
+
+  private handleHelpers(): void {
+    const { inputHandler } = this.gameData;
+
+    if (inputHandler.isKeyPressed(InputKey.X)) {
       this.isShowHelpers = true;
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.C)) {
+    if (inputHandler.isKeyPressed(InputKey.C)) {
       this.isShowHelpers = false;
     }
+  }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.K)) {
+  private calculateMovement(): void {
+    const { inputHandler } = this.gameData;
+    const { xCollision, yCollision } = this.collisionData;
+
+    if (inputHandler.isKeyPressed(InputKey.K)) {
       if (this.angle >= 360 || this.angle <= -360) {
         this.angle = 0 + this.rotationSpeed * this.rotationDirection;
       } else {
@@ -55,7 +85,7 @@ export class Player extends GameObject {
       }
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.J)) {
+    if (inputHandler.isKeyPressed(InputKey.J)) {
       if (this.angle >= 360 || this.angle <= -360) {
         this.angle = 0 + this.rotationSpeed * -this.rotationDirection;
       } else {
@@ -63,11 +93,11 @@ export class Player extends GameObject {
       }
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.G)) {
+    if (inputHandler.isKeyPressed(InputKey.G)) {
       this.angle = 0;
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.W)) {
+    if (inputHandler.isKeyPressed(InputKey.W)) {
       this.posY += this.speed * Math.sin(((this.angle - 90) * Math.PI) / 180);
       this.posX += this.speed * Math.cos(((this.angle - 90) * Math.PI) / 180);
 
@@ -77,7 +107,7 @@ export class Player extends GameObject {
       }
     }
 
-    if (gameData.inputHandler.isKeyPressed(InputKey.S)) {
+    if (inputHandler.isKeyPressed(InputKey.S)) {
       this.posY -= this.speed * Math.sin(((this.angle - 90) * Math.PI) / 180);
       this.posX -= this.speed * Math.cos(((this.angle - 90) * Math.PI) / 180);
 
@@ -97,6 +127,10 @@ export class Player extends GameObject {
         return;
       }
     }
+  }
+
+  private handleWorldCollision(): void {
+    const { xCollision, yCollision } = this.collisionData;
 
     if (xCollision || yCollision) {
       this.speed = 0;
@@ -109,7 +143,7 @@ export class Player extends GameObject {
 
     context.save();
 
-    context.fillStyle = "#A3BE8C";
+    context.fillStyle = colors.nord.green;
 
     // Note that the context is now in its rotated state.
     // That means drawing position [0,0] is visually at [ posX + this.width * 0.5, posY + this.height * 0.5 ].
@@ -145,7 +179,7 @@ export class Player extends GameObject {
     const width = 10;
     const height = 10;
 
-    context.fillStyle = "#BF616A";
+    context.fillStyle = colors.nord.red;
 
     // center
     context.fillRect(-5, -5, 10, 10);
@@ -180,14 +214,14 @@ export class Player extends GameObject {
     }
 
     // direction line
-    context.strokeStyle = "#BF616A";
+    context.strokeStyle = colors.nord.red;
     context.beginPath();
     context.moveTo(0, this.height * -0.5);
     context.lineTo(0, 0);
     context.stroke();
 
     // position text
-    context.font = "16px Arial";
+    context.font = "16px 'Yanone Kaffeesatz'";
     context.fillText(
       `x: ${this.posX.toFixed(0)}`,
       this.width * -0.5,
@@ -199,20 +233,22 @@ export class Player extends GameObject {
       this.height * -0.5 - 10
     );
 
-    context.fillText(`${this.angle}`, this.width * -0.5, 0);
-  }
+    context.fillText(
+      `Angle: ${this.angle}`,
+      this.width * -0.5,
+      this.height * 0.5 - 5
+    );
 
-  private checkWorldCollision(gameGeometry: {
-    width: number;
-    height: number;
-  }): CollisionData {
-    return {
-      xCollision:
-        this.posX - this.speed < this.width * 0.5 ||
-        this.posX + this.speed + this.width * 0.5 > gameGeometry.width,
-      yCollision:
-        this.posY - this.speed < this.height * 0.5 ||
-        this.posY + this.speed + this.height * 0.5 > gameGeometry.height,
-    };
+    context.fillText(
+      `Speed: ${this.speed}`,
+      this.width * -0.5,
+      this.height * 0.5 + 17
+    );
+
+    context.fillText(
+      `Rotation spd: ${this.rotationSpeed}`,
+      this.width * -0.5,
+      this.height * 0.5 + 34
+    );
   }
 }
