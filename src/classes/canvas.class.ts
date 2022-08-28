@@ -30,8 +30,21 @@ export class Canvas {
     this.context = context;
 
     // TODO: need to clarify why need 20 as correction
-    this.element.width = width || window.innerWidth - 20;
-    this.element.height = height || window.innerHeight - 20;
+    this.element.width = width || this.windowWidth;
+    this.element.height = height || this.windowHeight;
+
+    window.addEventListener("resize", () => {
+      this.element.width = this.windowWidth;
+      this.element.height = this.windowHeight;
+    });
+  }
+
+  private get windowWidth(): number {
+    return window.innerWidth - 20;
+  }
+
+  private get windowHeight(): number {
+    return window.innerHeight - 20;
   }
 
   public get width(): number {

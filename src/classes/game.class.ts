@@ -2,6 +2,7 @@ import { Canvas } from "./canvas.class";
 import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./shared-game-data.class";
 import { InputHandler } from "./input-handler.class";
+import { Player } from "./player.class";
 
 export class Game {
   private readonly canvas!: Canvas;
@@ -28,13 +29,22 @@ export class Game {
     this.data.inputHandler = this.inputHandler;
   }
 
-  public start(timestamp = 0): void {
+  public start(): void {
+    this.clearObjects();
+    this.addObject(
+      new Player(this.canvas.width * 0.5, this.canvas.height * 0.5)
+    );
+
+    this.requestFrame();
+  }
+
+  private requestFrame(timestamp = 0): void {
     this.handleTimeStamp(timestamp);
     this.update();
     this.clear();
     this.draw();
 
-    this.animationRequest = requestAnimationFrame(this.start.bind(this));
+    this.animationRequest = requestAnimationFrame(this.requestFrame.bind(this));
   }
 
   public stop(): void {
@@ -94,5 +104,10 @@ export class Game {
     this.data.gameObjects = this.gameObjects;
 
     return this;
+  }
+
+  public clearObjects(): void {
+    this.gameObjects = [];
+    this.data.gameObjects = this.gameObjects;
   }
 }
