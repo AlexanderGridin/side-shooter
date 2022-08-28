@@ -3,6 +3,8 @@ import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./shared-game-data.class";
 import { InputHandler } from "./input-handler.class";
 import { Player } from "./player.class";
+import { FpsCounter } from "./fps-counter.class";
+import { InputKey } from "../enumerations/input-key.enum";
 
 export class Game {
   private readonly canvas!: Canvas;
@@ -14,12 +16,28 @@ export class Game {
   private deltaTime = 0;
 
   private animationRequest!: number;
+  private isGameStarted = false;
+  private isDrawHelpers = false;
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
     this.inputHandler = new InputHandler();
 
     this.initSharedData();
+
+    window.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.code === InputKey.J && !this.isGameStarted) {
+        this.isGameStarted = true;
+        this.start();
+        return;
+      }
+
+      if (e.code === InputKey.J && this.isGameStarted) {
+        this.isGameStarted = false;
+        this.stop();
+        return;
+      }
+    });
   }
 
   private initSharedData(): void {
@@ -34,6 +52,7 @@ export class Game {
     this.addObject(
       new Player(this.canvas.width * 0.5, this.canvas.height * 0.5)
     );
+    this.addObject(new FpsCounter());
 
     this.requestFrame();
   }
@@ -49,10 +68,17 @@ export class Game {
 
   public stop(): void {
     cancelAnimationFrame(this.animationRequest);
+    this.clear();
   }
 
   private handleTimeStamp(timestamp: number): void {
-    this.deltaTime = timestamp - this.prevTimeStamp;
+    const newDeltaTime = timestamp - this.prevTimeStamp;
+
+    if (Math.ceil(this.deltaTime) !== Math.ceil(newDeltaTime)) {
+      console.log(newDeltaTime);
+    }
+
+    this.deltaTime = newDeltaTime;
     this.prevTimeStamp = timestamp;
     this.data.deltaTime = this.deltaTime;
   }
@@ -61,18 +87,22 @@ export class Game {
     this.canvas.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  private update(): void {
+  public update(): void {
+    this.inputHandler.update();
+
     this.gameObjects.forEach((gameObject: GameObject) =>
       gameObject.update(this.data)
     );
   }
 
-  private draw(): void {
+  public draw(): void {
     this.gameObjects.forEach((gameObject: GameObject) =>
       gameObject.draw(this.canvas.context)
     );
 
-    this.drawHelpers();
+    if (this.isDrawHelpers) {
+      this.drawHelpers();
+    }
   }
 
   private drawHelpers(): void {
