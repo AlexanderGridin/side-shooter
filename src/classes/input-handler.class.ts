@@ -1,28 +1,66 @@
 import { InputKey } from "../enumerations/input-key.enum";
 
 export class InputHandler {
-  public keys: Array<InputKey> = [];
+  private readonly keysPressedState: Record<string, boolean> = {};
+  private readonly keysPrevPressedState: Record<string, boolean> = {};
+
+  private readonly keysClickedState: Record<string, boolean> = {};
+
+  private lastKeyPressed!: InputKey;
 
   constructor() {
-    document.addEventListener("keydown", (e) => {
-      const pressedKey = e.code as InputKey;
+    this.initKeysStates();
+    this.setEventListeners();
+  }
 
-      if (this.keys.indexOf(pressedKey) === -1) {
-        this.keys.push(pressedKey);
+  private initKeysStates(): void {
+    Object.values(InputKey).forEach((key: string) => {
+      this.keysPressedState[key] = false;
+      this.keysPrevPressedState[key] = false;
+
+      this.keysClickedState[key] = false;
+    });
+  }
+
+  private setEventListeners(): void {
+    document.addEventListener("keydown", (e) => {
+      const keyCode = e.code as InputKey;
+
+      if (this.keysPressedState[keyCode] !== undefined) {
+        this.lastKeyPressed = keyCode;
+        this.keysPressedState[keyCode] = true;
       }
     });
 
     document.addEventListener("keyup", (e) => {
-      const uppedKey = e.code as InputKey;
-      const uppedKeyIndex = this.keys.indexOf(uppedKey);
+      const keyCode = e.code as InputKey;
 
-      if (uppedKeyIndex !== -1) {
-        this.keys.splice(uppedKeyIndex, 1);
+      if (this.keysPressedState[keyCode] !== undefined) {
+        this.keysPressedState[keyCode] = false;
       }
     });
   }
 
+  public update(): void {
+    const keyCodes: Array<string> = Object.values(InputKey);
+
+    keyCodes.forEach((keyCode: string) => {
+      this.keysClickedState[keyCode] =
+        !this.keysPrevPressedState[keyCode] && this.keysPressedState[keyCode];
+      this.keysPrevPressedState[keyCode] = this.keysPressedState[keyCode];
+    });
+  }
+
   public isKeyPressed(key: InputKey): boolean {
-    return this.keys.indexOf(key) !== -1;
+    return this.keysPressedState[key];
+  }
+
+  public isKeyClicked(key: InputKey): boolean {
+    return this.keysClickedState[key];
+  }
+
+  public isLastPressed(key: InputKey): boolean {
+    console.log(this.lastKeyPressed);
+    return this.lastKeyPressed === key;
   }
 }
