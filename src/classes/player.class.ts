@@ -1,3 +1,4 @@
+import { Direction } from "../enumerations/direction.enum";
 import { InputKey } from "../enumerations/input-key.enum";
 import { colors } from "../static-data/colors";
 import { GameObject } from "./game-object.class";
@@ -9,8 +10,6 @@ interface CollisionData {
   bottomCollision: boolean;
   leftCollision: boolean;
 }
-
-type Direction = "top" | "right" | "bottom" | "left" | "none";
 
 export class Player extends GameObject {
   public readonly width = 64;
@@ -167,24 +166,25 @@ export class Player extends GameObject {
   private detectDirection(): void {
     const { inputHandler } = this.gameData;
     const { W, S, A, D } = InputKey;
+    const { Top, Right, Bottom, Left } = Direction;
 
     if (inputHandler.isKeyClicked(W)) {
-      this.direction = "top";
+      this.direction = Top;
       return;
     }
 
     if (inputHandler.isKeyClicked(S)) {
-      this.direction = "bottom";
+      this.direction = Bottom;
       return;
     }
 
     if (inputHandler.isKeyClicked(D)) {
-      this.direction = "right";
+      this.direction = Right;
       return;
     }
 
     if (inputHandler.isKeyClicked(A)) {
-      this.direction = "left";
+      this.direction = Left;
       return;
     }
   }
@@ -192,28 +192,33 @@ export class Player extends GameObject {
   private calculateMovement(): void {
     const { inputHandler } = this.gameData;
     const { W, S, A, D } = InputKey;
+    const { Top, Right, Bottom, Left, None } = Direction;
 
-    if (inputHandler.isKeyPressed(W) && this.direction === "top") {
+    if (inputHandler.isKeyPressed(W) && this.isDirection(Top)) {
       this.moveForward();
       return;
     }
 
-    if (inputHandler.isKeyPressed(D) && this.direction === "right") {
+    if (inputHandler.isKeyPressed(D) && this.isDirection(Right)) {
       this.moveRight();
       return;
     }
 
-    if (inputHandler.isKeyPressed(S) && this.direction === "bottom") {
+    if (inputHandler.isKeyPressed(S) && this.isDirection(Bottom)) {
       this.moveBakward();
       return;
     }
 
-    if (inputHandler.isKeyPressed(A) && this.direction === "left") {
+    if (inputHandler.isKeyPressed(A) && this.isDirection(Left)) {
       this.moveLeft();
       return;
     }
 
-    this.direction = "none";
+    this.direction = None;
+  }
+
+  private isDirection(direction: Direction): boolean {
+    return this.direction === direction;
   }
 
   private moveForward(): void {
