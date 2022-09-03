@@ -16,7 +16,7 @@ export class Player extends GameObject {
   public readonly width = 64;
   public readonly height = 64;
 
-  private initialSpeed = 4;
+  private initialSpeed = 5;
   public speed = this.initialSpeed;
 
   public posX!: number;
@@ -39,43 +39,151 @@ export class Player extends GameObject {
     this.gameData = gameData;
     this.collisionData = this.getCollisionData(gameData.geometry);
 
-    this.handleHelpers();
     this.handleWorldCollision();
     this.detectDirection();
     this.calculateMovement();
+    this.handleHelpers();
   }
 
-  private handleHelpers(): void {
+  private getCollisionData(gameGeometry: {
+    width: number;
+    height: number;
+  }): CollisionData {
+    const { width, height } = gameGeometry;
+
+    const targetYBottom = Math.round(this.posY + this.initialSpeed);
+    const targetYTop = Math.round(this.posY - this.initialSpeed);
+
+    const targetXRight = Math.round(this.posX + this.initialSpeed);
+    const targetXLeft = Math.round(this.posX - this.initialSpeed);
+
+    return {
+      topCollision: targetYTop <= this.height * 0.5,
+      rightCollision: Math.round(targetXRight + this.width * 0.5) >= width,
+      bottomCollision: Math.round(targetYBottom + this.height * 0.5) >= height,
+      leftCollision: Math.round(targetXLeft - this.width * 0.5) <= 0,
+    };
+  }
+
+  private handleWorldCollision(): void {
+    const { topCollision, rightCollision, bottomCollision, leftCollision } =
+      this.collisionData;
     const { inputHandler } = this.gameData;
+    const { W, D, S, A } = InputKey;
 
-    if (inputHandler.isKeyPressed(InputKey.X)) {
-      this.isShowHelpers = true;
+    if (topCollision && inputHandler.isKeyPressed(W)) {
+      this.handleTopWorldCollision();
+      return;
     }
 
-    if (inputHandler.isKeyPressed(InputKey.C)) {
-      this.isShowHelpers = false;
+    if (rightCollision && inputHandler.isKeyPressed(D)) {
+      this.handleRightWorldCollision();
+      return;
     }
+
+    if (bottomCollision && inputHandler.isKeyPressed(S)) {
+      this.handleBottomWorldCollision();
+      return;
+    }
+
+    if (leftCollision && inputHandler.isKeyPressed(A)) {
+      this.handleLeftWorldCollision();
+      return;
+    }
+
+    this.resetSpeed();
+  }
+
+  private handleTopWorldCollision(): void {
+    const posYWithOffset = Math.round(this.posY - this.height * 0.5);
+
+    if (posYWithOffset === this.initialSpeed) {
+      return;
+    }
+
+    if (posYWithOffset - this.initialSpeed < 0) {
+      this.speed =
+        this.initialSpeed - Math.abs(posYWithOffset - this.initialSpeed);
+      return;
+    }
+
+    this.speed = 0;
+  }
+
+  private handleRightWorldCollision(): void {
+    const posXWithOffset = Math.round(this.posX + this.width * 0.5);
+    const { width } = this.gameData.geometry;
+
+    if (width - posXWithOffset === this.initialSpeed) {
+      return;
+    }
+
+    if (posXWithOffset + this.initialSpeed > width) {
+      this.speed =
+        this.initialSpeed - (posXWithOffset + this.initialSpeed - width);
+      return;
+    }
+
+    this.speed = 0;
+  }
+
+  private handleBottomWorldCollision(): void {
+    const posYWithOffset = Math.round(this.posY + this.height * 0.5);
+    const { height } = this.gameData.geometry;
+
+    if (height - posYWithOffset === this.initialSpeed) {
+      return;
+    }
+
+    if (posYWithOffset + this.initialSpeed > height) {
+      this.speed =
+        this.initialSpeed - (posYWithOffset + this.initialSpeed - height);
+      return;
+    }
+
+    this.speed = 0;
+  }
+
+  private handleLeftWorldCollision(): void {
+    const posXWithOffset = Math.round(this.posX - this.width * 0.5);
+
+    if (posXWithOffset === this.initialSpeed) {
+      return;
+    }
+
+    if (posXWithOffset - this.initialSpeed < 0) {
+      this.speed =
+        this.initialSpeed - Math.abs(posXWithOffset - this.initialSpeed);
+      return;
+    }
+
+    this.speed = 0;
+  }
+
+  private resetSpeed(): void {
+    this.speed = this.initialSpeed;
   }
 
   private detectDirection(): void {
     const { inputHandler } = this.gameData;
+    const { W, S, A, D } = InputKey;
 
-    if (inputHandler.isKeyClicked(InputKey.W)) {
+    if (inputHandler.isKeyClicked(W)) {
       this.direction = "top";
       return;
     }
 
-    if (inputHandler.isKeyClicked(InputKey.S)) {
+    if (inputHandler.isKeyClicked(S)) {
       this.direction = "bottom";
       return;
     }
 
-    if (inputHandler.isKeyClicked(InputKey.D)) {
+    if (inputHandler.isKeyClicked(D)) {
       this.direction = "right";
       return;
     }
 
-    if (inputHandler.isKeyClicked(InputKey.A)) {
+    if (inputHandler.isKeyClicked(A)) {
       this.direction = "left";
       return;
     }
@@ -83,24 +191,25 @@ export class Player extends GameObject {
 
   private calculateMovement(): void {
     const { inputHandler } = this.gameData;
+    const { W, S, A, D } = InputKey;
 
-    if (inputHandler.isKeyPressed(InputKey.W) && this.direction === "top") {
+    if (inputHandler.isKeyPressed(W) && this.direction === "top") {
       this.moveForward();
       return;
     }
 
-    if (inputHandler.isKeyPressed(InputKey.S) && this.direction === "bottom") {
+    if (inputHandler.isKeyPressed(D) && this.direction === "right") {
+      this.moveRight();
+      return;
+    }
+
+    if (inputHandler.isKeyPressed(S) && this.direction === "bottom") {
       this.moveBakward();
       return;
     }
 
-    if (inputHandler.isKeyPressed(InputKey.A) && this.direction === "left") {
+    if (inputHandler.isKeyPressed(A) && this.direction === "left") {
       this.moveLeft();
-      return;
-    }
-
-    if (inputHandler.isKeyPressed(InputKey.D) && this.direction === "right") {
-      this.moveRight();
       return;
     }
 
@@ -111,51 +220,24 @@ export class Player extends GameObject {
     this.posY -= this.speed;
   }
 
-  private moveBakward(): void {
-    this.posY += this.speed;
-  }
-
   private moveRight(): void {
     this.posX += this.speed;
+  }
+
+  private moveBakward(): void {
+    this.posY += this.speed;
   }
 
   private moveLeft(): void {
     this.posX -= this.speed;
   }
 
-  private handleWorldCollision(): void {
-    const { topCollision, rightCollision, bottomCollision, leftCollision } =
-      this.collisionData;
+  private handleHelpers(): void {
     const { inputHandler } = this.gameData;
 
-    if (
-      (topCollision && inputHandler.isKeyPressed(InputKey.W)) ||
-      (rightCollision && inputHandler.isKeyPressed(InputKey.D)) ||
-      (bottomCollision && inputHandler.isKeyPressed(InputKey.S)) ||
-      (leftCollision && inputHandler.isKeyPressed(InputKey.A))
-    ) {
-      this.speed = 0;
-    } else {
-      this.speed = this.initialSpeed;
+    if (inputHandler.isKeyClicked(InputKey.X)) {
+      this.isShowHelpers = !this.isShowHelpers;
     }
-  }
-
-  private getCollisionData(gameGeometry: {
-    width: number;
-    height: number;
-  }): CollisionData {
-    return {
-      topCollision:
-        this.posY - this.initialSpeed - this.speed <= this.height * 0.5,
-      rightCollision:
-        this.posX + this.speed + this.initialSpeed + this.width * 0.5 >=
-        gameGeometry.width,
-      bottomCollision:
-        this.posY + this.speed + this.initialSpeed + this.height * 0.5 >=
-        gameGeometry.height,
-      leftCollision:
-        Math.round(this.posX - this.initialSpeed - this.width * 0.5) <= 0,
-    };
   }
 
   public draw(context: CanvasRenderingContext2D): void {
@@ -205,21 +287,43 @@ export class Player extends GameObject {
 
   private drawTextHelpers(context: CanvasRenderingContext2D): void {
     context.font = "16px 'Yanone Kaffeesatz'";
+
+    if (this.posY >= 100) {
+      context.fillText(
+        `x: ${Math.round(this.posX) - Math.round(this.width * 0.5)}`,
+        this.posX - this.width * 0.5,
+        this.posY - this.height * 0.5 - 50
+      );
+      context.fillText(
+        `y: ${Math.round(this.posY - this.height * 0.5)}`,
+        this.posX - this.width * 0.5,
+        this.posY - this.height * 0.5 - 30
+      );
+
+      context.fillText(
+        `Speed: ${this.speed}`,
+        this.posX - this.width * 0.5,
+        this.posY - this.height * 0.5 - 10
+      );
+
+      return;
+    }
+
     context.fillText(
       `x: ${Math.round(this.posX) - Math.round(this.width * 0.5)}`,
       this.posX - this.width * 0.5,
-      this.posY - this.height * 0.5 - 50
+      this.posY + this.height * 0.5 + 55
     );
     context.fillText(
-      `y: ${this.posY.toFixed(0)}`,
+      `y: ${Math.round(this.posY - this.height * 0.5)}`,
       this.posX - this.width * 0.5,
-      this.posY - this.height * 0.5 - 30
+      this.posY + this.height * 0.5 + 35
     );
 
     context.fillText(
       `Speed: ${this.speed}`,
       this.posX - this.width * 0.5,
-      this.posY - this.height * 0.5 - 10
+      this.posY + this.height * 0.5 + 15
     );
   }
 
