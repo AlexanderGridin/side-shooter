@@ -19,7 +19,7 @@ export class Game {
 
   private animationRequest!: number;
   private isGameStarted = false;
-  private isDrawHelpers = true;
+  private isDrawHelpers = false;
   private isWasFirstStart = false;
 
   constructor(canvas: Canvas) {

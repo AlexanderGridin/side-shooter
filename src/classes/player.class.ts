@@ -11,6 +11,24 @@ interface CollisionData {
   leftCollision: boolean;
 }
 
+class Point {
+  constructor(public x: number, public y: number) {}
+}
+
+class PointsMap {
+  public center!: Point;
+
+  public topCenter!: Point;
+  public rightCenter!: Point;
+  public bottomCenter!: Point;
+  public leftCenter!: Point;
+
+  public topLeft!: Point;
+  public topRight!: Point;
+  public bottomRight!: Point;
+  public bottomLeft!: Point;
+}
+
 export class Player extends GameObject {
   public readonly width = 64;
   public readonly height = 64;
@@ -20,6 +38,7 @@ export class Player extends GameObject {
 
   public posX!: number;
   public posY!: number;
+  public pointsMap = new PointsMap();
   public direction!: Direction;
 
   private collisionData!: CollisionData;
@@ -32,6 +51,67 @@ export class Player extends GameObject {
 
     this.posX = posX;
     this.posY = posY;
+
+    this.initPointsMap(posX, posY);
+  }
+
+  private initPointsMap(x: number, y: number): void {
+    this.pointsMap.center = new Point(x, y);
+
+    this.pointsMap.topCenter = new Point(x, Math.ceil(y - this.height * 0.5));
+    this.pointsMap.rightCenter = new Point(Math.ceil(x + this.width * 0.5), y);
+    this.pointsMap.bottomCenter = new Point(
+      x,
+      Math.ceil(y + this.height * 0.5)
+    );
+    this.pointsMap.leftCenter = new Point(Math.ceil(x - this.width * 0.5), y);
+
+    this.pointsMap.topLeft = new Point(
+      Math.ceil(x - this.width * 0.5),
+      Math.ceil(y - this.height * 0.5)
+    );
+    this.pointsMap.topRight = new Point(
+      Math.ceil(x + this.width * 0.5),
+      Math.ceil(y - this.height * 0.5)
+    );
+    this.pointsMap.bottomRight = new Point(
+      Math.ceil(x + this.width * 0.5),
+      Math.ceil(y + this.height * 0.5)
+    );
+    this.pointsMap.bottomLeft = new Point(
+      Math.ceil(x - this.width * 0.5),
+      Math.ceil(y + this.height * 0.5)
+    );
+  }
+
+  private updatePointsMap(x: number | null, y: number | null): void {
+    if (x !== null) {
+      this.pointsMap.center.x = x;
+
+      this.pointsMap.topCenter.x = x;
+      this.pointsMap.rightCenter.x = Math.ceil(x + this.width * 0.5);
+      this.pointsMap.bottomCenter.x = x;
+      this.pointsMap.leftCenter.x = Math.ceil(x - this.width * 0.5);
+
+      this.pointsMap.topLeft.x = Math.ceil(x - this.width * 0.5);
+      this.pointsMap.topRight.x = Math.ceil(x + this.width * 0.5);
+      this.pointsMap.bottomRight.x = Math.ceil(x + this.width * 0.5);
+      this.pointsMap.bottomLeft.x = Math.ceil(x - this.width * 0.5);
+    }
+
+    if (y !== null) {
+      this.pointsMap.center.y = y;
+
+      this.pointsMap.topCenter.y = Math.ceil(y - this.height * 0.5);
+      this.pointsMap.rightCenter.y = y;
+      this.pointsMap.bottomCenter.y = Math.ceil(y + this.height * 0.5);
+      this.pointsMap.leftCenter.y = y;
+
+      this.pointsMap.topLeft.y = Math.ceil(y - this.height * 0.5);
+      this.pointsMap.topRight.y = Math.ceil(y - this.height * 0.5);
+      this.pointsMap.bottomRight.y = Math.ceil(y + this.height * 0.5);
+      this.pointsMap.bottomLeft.y = Math.ceil(y + this.height * 0.5);
+    }
   }
 
   public update(gameData: SharedGameData): void {
@@ -49,18 +129,13 @@ export class Player extends GameObject {
     height: number;
   }): CollisionData {
     const { width, height } = gameGeometry;
-
-    const targetYBottom = Math.round(this.posY + this.initialSpeed);
-    const targetYTop = Math.round(this.posY - this.initialSpeed);
-
-    const targetXRight = Math.round(this.posX + this.initialSpeed);
-    const targetXLeft = Math.round(this.posX - this.initialSpeed);
+    const { topCenter, rightCenter, bottomCenter, leftCenter } = this.pointsMap;
 
     return {
-      topCollision: targetYTop <= this.height * 0.5,
-      rightCollision: Math.round(targetXRight + this.width * 0.5) >= width,
-      bottomCollision: Math.round(targetYBottom + this.height * 0.5) >= height,
-      leftCollision: Math.round(targetXLeft - this.width * 0.5) <= 0,
+      topCollision: topCenter.y - this.initialSpeed <= 0,
+      rightCollision: rightCenter.x + this.initialSpeed >= width,
+      bottomCollision: bottomCenter.y + this.initialSpeed >= height,
+      leftCollision: leftCenter.x - this.initialSpeed <= 0,
     };
   }
 
@@ -94,15 +169,15 @@ export class Player extends GameObject {
   }
 
   private handleTopWorldCollision(): void {
-    const posYWithOffset = Math.round(this.posY - this.height * 0.5);
+    const { topCenter } = this.pointsMap;
 
-    if (posYWithOffset === this.initialSpeed) {
+    if (topCenter.y === this.initialSpeed) {
       return;
     }
 
-    if (posYWithOffset - this.initialSpeed < 0) {
+    if (topCenter.y - this.initialSpeed < 0) {
       this.speed =
-        this.initialSpeed - Math.abs(posYWithOffset - this.initialSpeed);
+        this.initialSpeed - Math.abs(topCenter.y - this.initialSpeed);
       return;
     }
 
@@ -110,16 +185,16 @@ export class Player extends GameObject {
   }
 
   private handleRightWorldCollision(): void {
-    const posXWithOffset = Math.round(this.posX + this.width * 0.5);
     const { width } = this.gameData.geometry;
+    const { rightCenter } = this.pointsMap;
 
-    if (width - posXWithOffset === this.initialSpeed) {
+    if (width - rightCenter.x === this.initialSpeed) {
       return;
     }
 
-    if (posXWithOffset + this.initialSpeed > width) {
+    if (rightCenter.x + this.initialSpeed > width) {
       this.speed =
-        this.initialSpeed - (posXWithOffset + this.initialSpeed - width);
+        this.initialSpeed - (rightCenter.x + this.initialSpeed - width);
       return;
     }
 
@@ -127,16 +202,16 @@ export class Player extends GameObject {
   }
 
   private handleBottomWorldCollision(): void {
-    const posYWithOffset = Math.round(this.posY + this.height * 0.5);
     const { height } = this.gameData.geometry;
+    const { bottomCenter } = this.pointsMap;
 
-    if (height - posYWithOffset === this.initialSpeed) {
+    if (height - bottomCenter.y === this.initialSpeed) {
       return;
     }
 
-    if (posYWithOffset + this.initialSpeed > height) {
+    if (bottomCenter.y + this.initialSpeed > height) {
       this.speed =
-        this.initialSpeed - (posYWithOffset + this.initialSpeed - height);
+        this.initialSpeed - (bottomCenter.y + this.initialSpeed - height);
       return;
     }
 
@@ -144,15 +219,15 @@ export class Player extends GameObject {
   }
 
   private handleLeftWorldCollision(): void {
-    const posXWithOffset = Math.round(this.posX - this.width * 0.5);
+    const { leftCenter } = this.pointsMap;
 
-    if (posXWithOffset === this.initialSpeed) {
+    if (leftCenter.x === this.initialSpeed) {
       return;
     }
 
-    if (posXWithOffset - this.initialSpeed < 0) {
+    if (leftCenter.x - this.initialSpeed < 0) {
       this.speed =
-        this.initialSpeed - Math.abs(posXWithOffset - this.initialSpeed);
+        this.initialSpeed - Math.abs(leftCenter.x - this.initialSpeed);
       return;
     }
 
@@ -223,18 +298,22 @@ export class Player extends GameObject {
 
   private moveForward(): void {
     this.posY -= this.speed;
+    this.updatePointsMap(null, this.posY);
   }
 
   private moveRight(): void {
     this.posX += this.speed;
+    this.updatePointsMap(this.posX, null);
   }
 
   private moveBakward(): void {
     this.posY += this.speed;
+    this.updatePointsMap(null, this.posY);
   }
 
   private moveLeft(): void {
     this.posX -= this.speed;
+    this.updatePointsMap(this.posX, null);
   }
 
   private handleHelpers(): void {
@@ -258,26 +337,26 @@ export class Player extends GameObject {
       this.drawHelpers({
         context,
         isShowCorners: false,
+        isShowCenters: false,
       });
     }
   }
 
   public drawPlayer(context: CanvasRenderingContext2D): void {
+    const { topLeft } = this.pointsMap;
+
     context.fillStyle = colors.nord.green;
-    context.fillRect(
-      this.posX - this.width * 0.5,
-      this.posY - this.height * 0.5,
-      this.width,
-      this.height
-    );
+    context.fillRect(topLeft.x, topLeft.y, this.width, this.height);
   }
 
   private drawHelpers({
     context,
     isShowCorners,
+    isShowCenters,
   }: {
     context: CanvasRenderingContext2D;
     isShowCorners?: boolean;
+    isShowCenters?: boolean;
   }): void {
     context.fillStyle = colors.nord.red;
 
@@ -288,114 +367,135 @@ export class Player extends GameObject {
     if (isShowCorners) {
       this.drawCornersHelpers(context);
     }
+
+    if (isShowCenters) {
+      this.drawCenterHelpers(context);
+    }
   }
 
   private drawTextHelpers(context: CanvasRenderingContext2D): void {
+    const { topLeft } = this.pointsMap;
     context.font = "16px 'Yanone Kaffeesatz'";
 
-    if (this.posY >= 100) {
-      context.fillText(
-        `x: ${Math.round(this.posX) - Math.round(this.width * 0.5)}`,
-        this.posX - this.width * 0.5,
-        this.posY - this.height * 0.5 - 50
-      );
-      context.fillText(
-        `y: ${Math.round(this.posY - this.height * 0.5)}`,
-        this.posX - this.width * 0.5,
-        this.posY - this.height * 0.5 - 30
-      );
+    this.drawPositionHelpers(context, topLeft.x, topLeft.y);
+    this.drawSpeedHelper(context);
+  }
 
-      context.fillText(
-        `Speed: ${this.speed}`,
-        this.posX - this.width * 0.5,
-        this.posY - this.height * 0.5 - 10
-      );
+  private drawPositionHelpers(
+    context: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): void {
+    const { topCenter, topLeft, bottomLeft } = this.pointsMap;
+
+    if (topCenter.y >= this.height) {
+      context.fillText(`x: ${x}`, topLeft.x, topLeft.y - 50);
+      context.fillText(`y: ${y}`, topLeft.x, topLeft.y - 30);
 
       return;
     }
 
-    context.fillText(
-      `x: ${Math.round(this.posX) - Math.round(this.width * 0.5)}`,
-      this.posX - this.width * 0.5,
-      this.posY + this.height * 0.5 + 55
-    );
-    context.fillText(
-      `y: ${Math.round(this.posY - this.height * 0.5)}`,
-      this.posX - this.width * 0.5,
-      this.posY + this.height * 0.5 + 35
-    );
+    context.fillText(`x: ${x}`, bottomLeft.x, bottomLeft.y + 55);
+    context.fillText(`y: ${y}`, bottomLeft.x, bottomLeft.y + 35);
+  }
 
-    context.fillText(
-      `Speed: ${this.speed}`,
-      this.posX - this.width * 0.5,
-      this.posY + this.height * 0.5 + 15
-    );
+  private drawSpeedHelper(context: CanvasRenderingContext2D): void {
+    const { topCenter, topLeft, bottomLeft } = this.pointsMap;
+
+    if (topCenter.y >= this.height) {
+      context.fillText(`Speed: ${this.speed}`, topLeft.x, topLeft.y - 10);
+      return;
+    }
+
+    context.fillText(`Speed: ${this.speed}`, bottomLeft.x, bottomLeft.y + 15);
   }
 
   private drawCenterHelper(context: CanvasRenderingContext2D): void {
+    const { center } = this.pointsMap;
+
     const width = 10;
     const height = 10;
 
-    context.fillRect(this.posX - width * 0.5, this.posY - height * 0.5, 10, 10);
+    context.fillRect(center.x - width * 0.5, center.y - height * 0.5, 10, 10);
+  }
+
+  private drawCenterHelpers(context: CanvasRenderingContext2D): void {
+    const { topCenter, rightCenter, bottomCenter, leftCenter } = this.pointsMap;
+
+    const width = 10;
+    const height = 10;
+
+    //top center
+    context.fillRect(topCenter.x - width * 0.5, topCenter.y, width, height);
+
+    //right center
+    context.fillRect(
+      rightCenter.x - width,
+      rightCenter.y - width * 0.5,
+      width,
+      height
+    );
+
+    //bottom center
+    context.fillRect(
+      bottomCenter.x - width * 0.5,
+      bottomCenter.y - height,
+      width,
+      height
+    );
+
+    //left center
+    context.fillRect(leftCenter.x, leftCenter.y - width * 0.5, width, height);
   }
 
   private drawCornersHelpers(context: CanvasRenderingContext2D): void {
+    const { topLeft, topRight, bottomRight, bottomLeft } = this.pointsMap;
+
     const width = 10;
     const height = 10;
 
     //top left
-    context.fillRect(
-      this.posX - this.width * 0.5,
-      this.posY - this.height * 0.5,
-      width,
-      height
-    );
+    context.fillRect(topLeft.x, topLeft.y, width, height);
 
     //top right
-    context.fillRect(
-      this.posX + this.width * 0.5 - width,
-      this.posY - this.height * 0.5,
-      width,
-      height
-    );
+    context.fillRect(topRight.x - width, topRight.y, width, height);
 
     //bottom right
     context.fillRect(
-      this.posX + this.width * 0.5 - width,
-      this.posY + this.height * 0.5 - height,
+      bottomRight.x - width,
+      bottomRight.y - height,
       width,
       height
     );
 
     //bottom left
-    context.fillRect(
-      this.posX - this.width * 0.5,
-      this.posY + this.height * 0.5 - height,
-      width,
-      height
-    );
+    context.fillRect(bottomLeft.x, bottomLeft.y - height, width, height);
   }
 
   private drawDirectionHelper(context: CanvasRenderingContext2D): void {
+    const { Top, Right, Bottom, Left } = Direction;
+    const { center, topCenter, rightCenter, bottomCenter, leftCenter } =
+      this.pointsMap;
+
     context.strokeStyle = colors.nord.red;
     context.beginPath();
 
-    context.moveTo(this.posX, this.posY);
+    context.moveTo(center.x, center.y);
 
-    if (this.direction === "top") {
-      context.lineTo(this.posX, this.posY - this.width * 0.5);
+    if (this.isDirection(Top)) {
+      context.lineTo(topCenter.x, topCenter.y);
     }
 
-    if (this.direction === "right") {
-      context.lineTo(this.posX + this.width * 0.5, this.posY);
+    if (this.isDirection(Right)) {
+      context.lineTo(rightCenter.x, rightCenter.y);
     }
 
-    if (this.direction === "bottom") {
-      context.lineTo(this.posX, this.posY + this.width * 0.5);
+    if (this.isDirection(Bottom)) {
+      context.lineTo(bottomCenter.x, bottomCenter.y);
     }
 
-    if (this.direction === "left") {
-      context.lineTo(this.posX - this.width * 0.5, this.posY);
+    if (this.isDirection(Left)) {
+      context.lineTo(leftCenter.x, leftCenter.y);
     }
 
     context.stroke();
