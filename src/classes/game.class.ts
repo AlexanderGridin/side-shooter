@@ -6,6 +6,7 @@ import { Player } from "./player.class";
 import { FpsCounter } from "./fps-counter.class";
 import { InputKey } from "../enumerations/input-key.enum";
 import { Grid } from "./grid.class";
+import { colors } from "../static-data/colors";
 
 export class Game {
   private readonly canvas!: Canvas;
@@ -18,24 +19,42 @@ export class Game {
 
   private animationRequest!: number;
   private isGameStarted = false;
-  private isDrawHelpers = false;
+  private isDrawHelpers = true;
+  private isWasFirstStart = false;
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
     this.inputHandler = new InputHandler();
 
     this.initSharedData();
+    this.setupGameObjects();
+    this.update();
+    this.draw();
 
     window.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.code === InputKey.J && !this.isGameStarted) {
         this.isGameStarted = true;
-        this.start();
+
+        document.body.style.border = `5px solid ${colors.nord.green}`;
+        document.body.style.backgroundColor = `${colors.nord.green}`;
+
+        if (!this.isWasFirstStart) {
+          this.isWasFirstStart = true;
+          this.start();
+
+          return;
+        }
+
+        this.requestFrame();
         return;
       }
 
       if (e.code === InputKey.J && this.isGameStarted) {
         this.isGameStarted = false;
-        this.stop();
+
+        document.body.style.border = `5px solid ${colors.nord.lightGray}`;
+        document.body.style.backgroundColor = `${colors.nord.darkGray}`;
+
         return;
       }
     });
@@ -49,7 +68,6 @@ export class Game {
   }
 
   public start(): void {
-    this.setupGameObjects();
     this.requestFrame();
   }
 
@@ -69,12 +87,15 @@ export class Game {
     this.clear();
     this.draw();
 
-    this.animationRequest = requestAnimationFrame(this.requestFrame.bind(this));
+    if (this.isGameStarted) {
+      this.animationRequest = requestAnimationFrame(
+        this.requestFrame.bind(this)
+      );
+    }
   }
 
   public stop(): void {
     cancelAnimationFrame(this.animationRequest);
-    this.clear();
   }
 
   private handleTimeStamp(timestamp: number): void {
