@@ -34,7 +34,7 @@ export class Grid implements Update, Draw {
 
   private setupDrawindContext(context: CanvasRenderingContext2D): void {
     context.strokeStyle = colors.nord.lightGray;
-    context.lineWidth = 1;
+    context.lineWidth = 2;
   }
 
   private drawRows(context: CanvasRenderingContext2D): void {
