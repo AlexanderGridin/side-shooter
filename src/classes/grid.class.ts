@@ -33,12 +33,12 @@ export class Grid implements Update, Draw {
   }
 
   private setupDrawindContext(context: CanvasRenderingContext2D): void {
-    context.strokeStyle = colors.nord.orange;
+    context.strokeStyle = colors.nord.lightGray;
     context.lineWidth = 1;
   }
 
   private drawRows(context: CanvasRenderingContext2D): void {
-    for (let i = 1; i < this.rows; i++) {
+    for (let i = 0; i <= this.rows; i++) {
       context.beginPath();
       context.moveTo(0, i * this.cellHeight);
       context.lineTo(this.canvas.width, i * this.cellWidth);
@@ -47,7 +47,7 @@ export class Grid implements Update, Draw {
   }
 
   private drawCols(context: CanvasRenderingContext2D): void {
-    for (let i = 1; i < this.cols; i++) {
+    for (let i = 0; i <= this.cols; i++) {
       context.beginPath();
       context.moveTo(i * this.cellWidth, 0);
       context.lineTo(i * this.cellWidth, this.canvas.height);
