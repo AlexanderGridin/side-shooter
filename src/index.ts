@@ -4,8 +4,9 @@ import { Game } from "./classes/game.class";
 const main = () => {
   const canvas = new Canvas({
     selector: "#canvas",
-    width: 860,
-    height: 480,
+    // width: 852,
+    width: 896,
+    height: 512,
   });
 
   new Game(canvas);
