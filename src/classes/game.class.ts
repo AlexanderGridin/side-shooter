@@ -5,6 +5,7 @@ import { InputHandler } from "./input-handler.class";
 import { Player } from "./player.class";
 import { FpsCounter } from "./fps-counter.class";
 import { InputKey } from "../enumerations/input-key.enum";
+import { Grid } from "./grid.class";
 
 export class Game {
   private readonly canvas!: Canvas;
@@ -48,13 +49,18 @@ export class Game {
   }
 
   public start(): void {
+    this.setupGameObjects();
+    this.requestFrame();
+  }
+
+  private setupGameObjects(): void {
     this.clearObjects();
+
+    this.addObject(new Grid(this.canvas));
     this.addObject(
       new Player(this.canvas.width * 0.5, this.canvas.height * 0.5)
     );
     this.addObject(new FpsCounter());
-
-    this.requestFrame();
   }
 
   private requestFrame(timestamp = 0): void {

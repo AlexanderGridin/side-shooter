@@ -1,13 +1,9 @@
 import { InputKey } from "../enumerations/input-key.enum";
 import { colors } from "../static-data/colors";
-import { Canvas } from "./canvas.class";
 import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./shared-game-data.class";
 
 interface CollisionData {
-  xCollision: boolean;
-  yCollision: boolean;
-
   topCollision: boolean;
   rightCollision: boolean;
   bottomCollision: boolean;
@@ -20,7 +16,7 @@ export class Player extends GameObject {
   public readonly width = 64;
   public readonly height = 64;
 
-  private initialSpeed = 3;
+  private initialSpeed = 4;
   public speed = this.initialSpeed;
 
   public posX!: number;
@@ -40,8 +36,8 @@ export class Player extends GameObject {
   }
 
   public update(gameData: SharedGameData): void {
-    this.collisionData = this.getCollisionData(gameData.geometry);
     this.gameData = gameData;
+    this.collisionData = this.getCollisionData(gameData.geometry);
 
     this.handleHelpers();
     this.handleWorldCollision();
@@ -149,19 +145,16 @@ export class Player extends GameObject {
     height: number;
   }): CollisionData {
     return {
-      xCollision:
-        this.posX - this.speed < this.width * 0.5 ||
-        this.posX + this.speed + this.width * 0.5 > gameGeometry.width,
-      yCollision:
-        this.posY - this.speed < this.height * 0.5 ||
-        this.posY + this.speed + this.height * 0.5 > gameGeometry.height,
-
-      topCollision: this.posY - this.speed < this.height * 0.5,
+      topCollision:
+        this.posY - this.initialSpeed - this.speed <= this.height * 0.5,
       rightCollision:
-        this.posX + this.speed + this.width * 0.5 > gameGeometry.width,
+        this.posX + this.speed + this.initialSpeed + this.width * 0.5 >=
+        gameGeometry.width,
       bottomCollision:
-        this.posY + this.speed + this.height * 0.5 > gameGeometry.height,
-      leftCollision: this.posX - this.speed < this.width * 0.5,
+        this.posY + this.speed + this.initialSpeed + this.height * 0.5 >=
+        gameGeometry.height,
+      leftCollision:
+        Math.round(this.posX - this.initialSpeed - this.width * 0.5) <= 0,
     };
   }
 
@@ -213,7 +206,7 @@ export class Player extends GameObject {
   private drawTextHelpers(context: CanvasRenderingContext2D): void {
     context.font = "16px 'Yanone Kaffeesatz'";
     context.fillText(
-      `x: ${this.posX.toFixed(0)}`,
+      `x: ${Math.round(this.posX) - Math.round(this.width * 0.5)}`,
       this.posX - this.width * 0.5,
       this.posY - this.height * 0.5 - 50
     );

@@ -33,6 +33,7 @@ export class Canvas {
     this.element.width = width || this.windowWidth;
     this.element.height = height || this.windowHeight;
 
+    // TODO: need to make normal resizing
     window.addEventListener("resize", () => {
       this.element.width = this.windowWidth;
       this.element.height = this.windowHeight;
