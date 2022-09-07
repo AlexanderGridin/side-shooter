@@ -1,18 +1,16 @@
 import { Direction } from "../enumerations/direction.enum";
 import { InputKey } from "../enumerations/input-key.enum";
 import { colors } from "../static-data/colors";
+import { canvas } from "./canvas.class";
 import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./shared-game-data.class";
+import { Point } from "./point.class";
 
 interface CollisionData {
   topCollision: boolean;
   rightCollision: boolean;
   bottomCollision: boolean;
   leftCollision: boolean;
-}
-
-class Point {
-  constructor(public x: number, public y: number) {}
 }
 
 class PointsMap {
@@ -45,6 +43,8 @@ export class Player extends GameObject {
   private gameData!: SharedGameData;
 
   private isShowHelpers = true;
+  private isShowCornerHelpers = false;
+  private isShowCenterHelpers = false;
 
   constructor(posX: number, posY: number) {
     super();
@@ -116,7 +116,7 @@ export class Player extends GameObject {
 
   public update(gameData: SharedGameData): void {
     this.gameData = gameData;
-    this.collisionData = this.getCollisionData(gameData.geometry);
+    this.collisionData = this.getCanvasCollisionData();
 
     this.handleWorldCollision();
     this.detectDirection();
@@ -124,11 +124,8 @@ export class Player extends GameObject {
     this.handleHelpers();
   }
 
-  private getCollisionData(gameGeometry: {
-    width: number;
-    height: number;
-  }): CollisionData {
-    const { width, height } = gameGeometry;
+  private getCanvasCollisionData(): CollisionData {
+    const { width, height } = canvas;
     const { topCenter, rightCenter, bottomCenter, leftCenter } = this.pointsMap;
 
     return {
@@ -185,7 +182,7 @@ export class Player extends GameObject {
   }
 
   private handleRightWorldCollision(): void {
-    const { width } = this.gameData.geometry;
+    const { width } = canvas;
     const { rightCenter } = this.pointsMap;
 
     if (width - rightCenter.x === this.initialSpeed) {
@@ -202,7 +199,7 @@ export class Player extends GameObject {
   }
 
   private handleBottomWorldCollision(): void {
-    const { height } = this.gameData.geometry;
+    const { height } = canvas;
     const { bottomCenter } = this.pointsMap;
 
     if (height - bottomCenter.y === this.initialSpeed) {
@@ -324,180 +321,320 @@ export class Player extends GameObject {
     }
   }
 
-  public draw(context: CanvasRenderingContext2D): void {
-    context.save();
-    this.drawContent(context);
-    context.restore();
-  }
-
-  public drawContent(context: CanvasRenderingContext2D): void {
-    this.drawPlayer(context);
+  public draw(): void {
+    this.drawPlayer();
 
     if (this.isShowHelpers) {
       this.drawHelpers({
-        context,
-        isShowCorners: false,
-        isShowCenters: false,
+        isShowCorners: this.isShowCornerHelpers,
+        isShowCenters: this.isShowCornerHelpers,
       });
     }
   }
 
-  public drawPlayer(context: CanvasRenderingContext2D): void {
+  public drawPlayer(): void {
     const { topLeft } = this.pointsMap;
 
-    context.fillStyle = colors.nord.green;
-    context.fillRect(topLeft.x, topLeft.y, this.width, this.height);
+    canvas.drawRectangle({
+      position: {
+        x: topLeft.x,
+        y: topLeft.y,
+      },
+      width: this.width,
+      height: this.height,
+      color: colors.nord.green,
+    });
   }
 
   private drawHelpers({
-    context,
     isShowCorners,
     isShowCenters,
   }: {
-    context: CanvasRenderingContext2D;
     isShowCorners?: boolean;
     isShowCenters?: boolean;
   }): void {
-    context.fillStyle = colors.nord.red;
-
-    this.drawCenterHelper(context);
-    this.drawDirectionHelper(context);
-    this.drawTextHelpers(context);
+    this.drawCenterHelper();
+    this.drawDirectionHelper();
+    this.drawTextHelpers();
 
     if (isShowCorners) {
-      this.drawCornersHelpers(context);
+      this.drawCornersHelpers();
     }
 
     if (isShowCenters) {
-      this.drawCenterHelpers(context);
+      this.drawCenterHelpers();
     }
   }
 
-  private drawTextHelpers(context: CanvasRenderingContext2D): void {
+  private drawTextHelpers(): void {
     const { topLeft } = this.pointsMap;
-    context.font = "16px 'Yanone Kaffeesatz'";
 
-    this.drawPositionHelpers(context, topLeft.x, topLeft.y);
-    this.drawSpeedHelper(context);
+    this.drawPositionHelpers(topLeft.x, topLeft.y);
+    this.drawSpeedHelper();
   }
 
-  private drawPositionHelpers(
-    context: CanvasRenderingContext2D,
-    x: number,
-    y: number
-  ): void {
+  private drawPositionHelpers(x: number, y: number): void {
     const { topCenter, topLeft, bottomLeft } = this.pointsMap;
 
     if (topCenter.y >= this.height) {
-      context.fillText(`x: ${x}`, topLeft.x, topLeft.y - 50);
-      context.fillText(`y: ${y}`, topLeft.x, topLeft.y - 30);
+      canvas.drawText({
+        text: `x: ${x}`,
+        position: {
+          x: topLeft.x,
+          y: topLeft.y - 50,
+        },
+        fontSize: 16,
+        fontFamily: "Yanone Kaffeesatz",
+        color: colors.nord.red,
+      });
+
+      canvas.drawText({
+        text: `y: ${y}`,
+        position: {
+          x: topLeft.x,
+          y: topLeft.y - 30,
+        },
+        fontSize: 16,
+        fontFamily: "Yanone Kaffeesatz",
+        color: colors.nord.red,
+      });
 
       return;
     }
 
-    context.fillText(`x: ${x}`, bottomLeft.x, bottomLeft.y + 55);
-    context.fillText(`y: ${y}`, bottomLeft.x, bottomLeft.y + 35);
+    canvas.drawText({
+      text: `x: ${x}`,
+      position: {
+        x: bottomLeft.x,
+        y: bottomLeft.y + 50,
+      },
+      fontSize: 16,
+      fontFamily: "Yanone Kaffeesatz",
+      color: colors.nord.red,
+    });
+
+    canvas.drawText({
+      text: `y: ${y}`,
+      position: {
+        x: bottomLeft.x,
+        y: bottomLeft.y + 35,
+      },
+      fontSize: 16,
+      fontFamily: "Yanone Kaffeesatz",
+      color: colors.nord.red,
+    });
   }
 
-  private drawSpeedHelper(context: CanvasRenderingContext2D): void {
+  private drawSpeedHelper(): void {
     const { topCenter, topLeft, bottomLeft } = this.pointsMap;
 
     if (topCenter.y >= this.height) {
-      context.fillText(`Speed: ${this.speed}`, topLeft.x, topLeft.y - 10);
+      canvas.drawText({
+        text: `Speed: ${this.speed}`,
+        position: {
+          x: topLeft.x,
+          y: topLeft.y - 10,
+        },
+        fontSize: 16,
+        fontFamily: "Yanone Kaffeesatz",
+        color: colors.nord.red,
+      });
       return;
     }
 
-    context.fillText(`Speed: ${this.speed}`, bottomLeft.x, bottomLeft.y + 15);
+    canvas.drawText({
+      text: `Speed: ${this.speed}`,
+      position: {
+        x: bottomLeft.x,
+        y: bottomLeft.y + 15,
+      },
+      fontSize: 16,
+      fontFamily: "Yanone Kaffeesatz",
+      color: colors.nord.red,
+    });
   }
 
-  private drawCenterHelper(context: CanvasRenderingContext2D): void {
+  private drawCenterHelper(): void {
     const { center } = this.pointsMap;
 
     const width = 10;
     const height = 10;
 
-    context.fillRect(center.x - width * 0.5, center.y - height * 0.5, 10, 10);
+    canvas.drawRectangle({
+      position: {
+        x: center.x - width * 0.5,
+        y: center.y - height * 0.5,
+      },
+      width: 10,
+      height: 10,
+      color: colors.nord.red,
+    });
   }
 
-  private drawCenterHelpers(context: CanvasRenderingContext2D): void {
+  private drawCenterHelpers(): void {
     const { topCenter, rightCenter, bottomCenter, leftCenter } = this.pointsMap;
 
     const width = 10;
     const height = 10;
 
     //top center
-    context.fillRect(topCenter.x - width * 0.5, topCenter.y, width, height);
+    canvas.drawRectangle({
+      position: {
+        x: topCenter.x - width * 0.5,
+        y: topCenter.y,
+      },
+      width,
+      height,
+      color: colors.nord.red,
+    });
 
     //right center
-    context.fillRect(
-      rightCenter.x - width,
-      rightCenter.y - width * 0.5,
+    canvas.drawRectangle({
+      position: {
+        x: rightCenter.x - width,
+        y: rightCenter.y - height * 0.5,
+      },
       width,
-      height
-    );
+      height,
+      color: colors.nord.red,
+    });
 
     //bottom center
-    context.fillRect(
-      bottomCenter.x - width * 0.5,
-      bottomCenter.y - height,
+    canvas.drawRectangle({
+      position: {
+        x: bottomCenter.x - width * 0.5,
+        y: bottomCenter.y - height,
+      },
       width,
-      height
-    );
+      height,
+      color: colors.nord.red,
+    });
 
     //left center
-    context.fillRect(leftCenter.x, leftCenter.y - width * 0.5, width, height);
+    canvas.drawRectangle({
+      position: {
+        x: leftCenter.x,
+        y: leftCenter.y - height * 0.5,
+      },
+      width,
+      height,
+      color: colors.nord.red,
+    });
   }
 
-  private drawCornersHelpers(context: CanvasRenderingContext2D): void {
+  private drawCornersHelpers(): void {
     const { topLeft, topRight, bottomRight, bottomLeft } = this.pointsMap;
 
     const width = 10;
     const height = 10;
 
     //top left
-    context.fillRect(topLeft.x, topLeft.y, width, height);
+    canvas.drawRectangle({
+      position: {
+        x: topLeft.x,
+        y: topLeft.y,
+      },
+      width,
+      height,
+      color: colors.nord.red,
+    });
 
     //top right
-    context.fillRect(topRight.x - width, topRight.y, width, height);
+    canvas.drawRectangle({
+      position: {
+        x: topRight.x - width,
+        y: topRight.y,
+      },
+      width,
+      height,
+      color: colors.nord.red,
+    });
 
     //bottom right
-    context.fillRect(
-      bottomRight.x - width,
-      bottomRight.y - height,
+    canvas.drawRectangle({
+      position: {
+        x: bottomRight.x - width,
+        y: bottomRight.y - height,
+      },
       width,
-      height
-    );
+      height,
+      color: colors.nord.red,
+    });
 
     //bottom left
-    context.fillRect(bottomLeft.x, bottomLeft.y - height, width, height);
+    canvas.drawRectangle({
+      position: {
+        x: bottomLeft.x,
+        y: bottomLeft.y - height,
+      },
+      width,
+      height,
+      color: colors.nord.red,
+    });
   }
 
-  private drawDirectionHelper(context: CanvasRenderingContext2D): void {
+  private drawDirectionHelper(): void {
     const { Top, Right, Bottom, Left } = Direction;
     const { center, topCenter, rightCenter, bottomCenter, leftCenter } =
       this.pointsMap;
 
-    context.strokeStyle = colors.nord.red;
-    context.beginPath();
-
-    context.moveTo(center.x, center.y);
-
     if (this.isDirection(Top)) {
-      context.lineTo(topCenter.x, topCenter.y);
+      canvas.drawLine({
+        start: {
+          x: center.x,
+          y: center.y,
+        },
+        end: {
+          x: topCenter.x,
+          y: topCenter.y,
+        },
+        color: colors.nord.red,
+      });
+      return;
     }
 
     if (this.isDirection(Right)) {
-      context.lineTo(rightCenter.x, rightCenter.y);
+      canvas.drawLine({
+        start: {
+          x: center.x,
+          y: center.y,
+        },
+        end: {
+          x: rightCenter.x,
+          y: rightCenter.y,
+        },
+        color: colors.nord.red,
+      });
+      return;
     }
 
     if (this.isDirection(Bottom)) {
-      context.lineTo(bottomCenter.x, bottomCenter.y);
+      canvas.drawLine({
+        start: {
+          x: center.x,
+          y: center.y,
+        },
+        end: {
+          x: bottomCenter.x,
+          y: bottomCenter.y,
+        },
+        color: colors.nord.red,
+      });
+      return;
     }
 
     if (this.isDirection(Left)) {
-      context.lineTo(leftCenter.x, leftCenter.y);
+      canvas.drawLine({
+        start: {
+          x: center.x,
+          y: center.y,
+        },
+        end: {
+          x: leftCenter.x,
+          y: leftCenter.y,
+        },
+        color: colors.nord.red,
+      });
     }
-
-    context.stroke();
   }
 }
