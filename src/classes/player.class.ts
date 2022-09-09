@@ -2,6 +2,7 @@ import { Direction } from "../enumerations/direction.enum";
 import { InputKey } from "../enumerations/input-key.enum";
 import { colors } from "../static-data/colors";
 import { GameObject } from "./game-object.class";
+import { PointsMap } from "./points-map.class";
 import { SharedGameData } from "./shared-game-data.class";
 
 interface CollisionData {
@@ -11,22 +12,8 @@ interface CollisionData {
   leftCollision: boolean;
 }
 
-class Point {
+export class Point {
   constructor(public x: number, public y: number) {}
-}
-
-class PointsMap {
-  public center!: Point;
-
-  public topCenter!: Point;
-  public rightCenter!: Point;
-  public bottomCenter!: Point;
-  public leftCenter!: Point;
-
-  public topLeft!: Point;
-  public topRight!: Point;
-  public bottomRight!: Point;
-  public bottomLeft!: Point;
 }
 
 export class Player extends GameObject {
@@ -52,66 +39,14 @@ export class Player extends GameObject {
     this.posX = posX;
     this.posY = posY;
 
-    this.initPointsMap(posX, posY);
-  }
-
-  private initPointsMap(x: number, y: number): void {
-    this.pointsMap.center = new Point(x, y);
-
-    this.pointsMap.topCenter = new Point(x, Math.ceil(y - this.height * 0.5));
-    this.pointsMap.rightCenter = new Point(Math.ceil(x + this.width * 0.5), y);
-    this.pointsMap.bottomCenter = new Point(
-      x,
-      Math.ceil(y + this.height * 0.5)
-    );
-    this.pointsMap.leftCenter = new Point(Math.ceil(x - this.width * 0.5), y);
-
-    this.pointsMap.topLeft = new Point(
-      Math.ceil(x - this.width * 0.5),
-      Math.ceil(y - this.height * 0.5)
-    );
-    this.pointsMap.topRight = new Point(
-      Math.ceil(x + this.width * 0.5),
-      Math.ceil(y - this.height * 0.5)
-    );
-    this.pointsMap.bottomRight = new Point(
-      Math.ceil(x + this.width * 0.5),
-      Math.ceil(y + this.height * 0.5)
-    );
-    this.pointsMap.bottomLeft = new Point(
-      Math.ceil(x - this.width * 0.5),
-      Math.ceil(y + this.height * 0.5)
-    );
-  }
-
-  private updatePointsMap(x: number | null, y: number | null): void {
-    if (x !== null) {
-      this.pointsMap.center.x = x;
-
-      this.pointsMap.topCenter.x = x;
-      this.pointsMap.rightCenter.x = Math.ceil(x + this.width * 0.5);
-      this.pointsMap.bottomCenter.x = x;
-      this.pointsMap.leftCenter.x = Math.ceil(x - this.width * 0.5);
-
-      this.pointsMap.topLeft.x = Math.ceil(x - this.width * 0.5);
-      this.pointsMap.topRight.x = Math.ceil(x + this.width * 0.5);
-      this.pointsMap.bottomRight.x = Math.ceil(x + this.width * 0.5);
-      this.pointsMap.bottomLeft.x = Math.ceil(x - this.width * 0.5);
-    }
-
-    if (y !== null) {
-      this.pointsMap.center.y = y;
-
-      this.pointsMap.topCenter.y = Math.ceil(y - this.height * 0.5);
-      this.pointsMap.rightCenter.y = y;
-      this.pointsMap.bottomCenter.y = Math.ceil(y + this.height * 0.5);
-      this.pointsMap.leftCenter.y = y;
-
-      this.pointsMap.topLeft.y = Math.ceil(y - this.height * 0.5);
-      this.pointsMap.topRight.y = Math.ceil(y - this.height * 0.5);
-      this.pointsMap.bottomRight.y = Math.ceil(y + this.height * 0.5);
-      this.pointsMap.bottomLeft.y = Math.ceil(y + this.height * 0.5);
-    }
+    this.pointsMap.initForRectangle({
+      centerPoint: {
+        x: posX,
+        y: posY,
+      },
+      width: this.width,
+      height: this.height,
+    });
   }
 
   public update(gameData: SharedGameData): void {
@@ -298,22 +233,42 @@ export class Player extends GameObject {
 
   private moveForward(): void {
     this.posY -= this.speed;
-    this.updatePointsMap(null, this.posY);
+    this.pointsMap.updateRectangleMap({
+      x: null,
+      y: this.posY,
+      width: this.width,
+      height: this.height,
+    });
   }
 
   private moveRight(): void {
     this.posX += this.speed;
-    this.updatePointsMap(this.posX, null);
+    this.pointsMap.updateRectangleMap({
+      x: this.posX,
+      y: null,
+      width: this.width,
+      height: this.height,
+    });
   }
 
   private moveBakward(): void {
     this.posY += this.speed;
-    this.updatePointsMap(null, this.posY);
+    this.pointsMap.updateRectangleMap({
+      x: null,
+      y: this.posY,
+      width: this.width,
+      height: this.height,
+    });
   }
 
   private moveLeft(): void {
     this.posX -= this.speed;
-    this.updatePointsMap(this.posX, null);
+    this.pointsMap.updateRectangleMap({
+      x: this.posX,
+      y: null,
+      width: this.width,
+      height: this.height,
+    });
   }
 
   private handleHelpers(): void {
