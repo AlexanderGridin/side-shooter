@@ -3,8 +3,9 @@ import { InputKey } from "../enumerations/input-key.enum";
 import { colors } from "../static-data/colors";
 import { canvas } from "./canvas.class";
 import { GameObject } from "./game-object.class";
+import { Helpers } from "./helpers.class";
+import { PointsMap } from "./points-map.class";
 import { SharedGameData } from "./shared-game-data.class";
-import { Point } from "./point.class";
 
 interface CollisionData {
   topCollision: boolean;
@@ -13,18 +14,8 @@ interface CollisionData {
   leftCollision: boolean;
 }
 
-class PointsMap {
-  public center!: Point;
-
-  public topCenter!: Point;
-  public rightCenter!: Point;
-  public bottomCenter!: Point;
-  public leftCenter!: Point;
-
-  public topLeft!: Point;
-  public topRight!: Point;
-  public bottomRight!: Point;
-  public bottomLeft!: Point;
+export class Point {
+  constructor(public x: number, public y: number) {}
 }
 
 export class Player extends GameObject {
@@ -42,9 +33,7 @@ export class Player extends GameObject {
   private collisionData!: CollisionData;
   private gameData!: SharedGameData;
 
-  private isShowHelpers = true;
-  private isShowCornerHelpers = false;
-  private isShowCenterHelpers = false;
+  private readonly helpers!: Helpers<Player>;
 
   constructor(posX: number, posY: number) {
     super();
@@ -52,66 +41,24 @@ export class Player extends GameObject {
     this.posX = posX;
     this.posY = posY;
 
-    this.initPointsMap(posX, posY);
-  }
+    this.pointsMap.initForRectangle({
+      centerPoint: {
+        x: posX,
+        y: posY,
+      },
+      width: this.width,
+      height: this.height,
+    });
 
-  private initPointsMap(x: number, y: number): void {
-    this.pointsMap.center = new Point(x, y);
-
-    this.pointsMap.topCenter = new Point(x, Math.ceil(y - this.height * 0.5));
-    this.pointsMap.rightCenter = new Point(Math.ceil(x + this.width * 0.5), y);
-    this.pointsMap.bottomCenter = new Point(
-      x,
-      Math.ceil(y + this.height * 0.5)
-    );
-    this.pointsMap.leftCenter = new Point(Math.ceil(x - this.width * 0.5), y);
-
-    this.pointsMap.topLeft = new Point(
-      Math.ceil(x - this.width * 0.5),
-      Math.ceil(y - this.height * 0.5)
-    );
-    this.pointsMap.topRight = new Point(
-      Math.ceil(x + this.width * 0.5),
-      Math.ceil(y - this.height * 0.5)
-    );
-    this.pointsMap.bottomRight = new Point(
-      Math.ceil(x + this.width * 0.5),
-      Math.ceil(y + this.height * 0.5)
-    );
-    this.pointsMap.bottomLeft = new Point(
-      Math.ceil(x - this.width * 0.5),
-      Math.ceil(y + this.height * 0.5)
-    );
-  }
-
-  private updatePointsMap(x: number | null, y: number | null): void {
-    if (x !== null) {
-      this.pointsMap.center.x = x;
-
-      this.pointsMap.topCenter.x = x;
-      this.pointsMap.rightCenter.x = Math.ceil(x + this.width * 0.5);
-      this.pointsMap.bottomCenter.x = x;
-      this.pointsMap.leftCenter.x = Math.ceil(x - this.width * 0.5);
-
-      this.pointsMap.topLeft.x = Math.ceil(x - this.width * 0.5);
-      this.pointsMap.topRight.x = Math.ceil(x + this.width * 0.5);
-      this.pointsMap.bottomRight.x = Math.ceil(x + this.width * 0.5);
-      this.pointsMap.bottomLeft.x = Math.ceil(x - this.width * 0.5);
-    }
-
-    if (y !== null) {
-      this.pointsMap.center.y = y;
-
-      this.pointsMap.topCenter.y = Math.ceil(y - this.height * 0.5);
-      this.pointsMap.rightCenter.y = y;
-      this.pointsMap.bottomCenter.y = Math.ceil(y + this.height * 0.5);
-      this.pointsMap.leftCenter.y = y;
-
-      this.pointsMap.topLeft.y = Math.ceil(y - this.height * 0.5);
-      this.pointsMap.topRight.y = Math.ceil(y - this.height * 0.5);
-      this.pointsMap.bottomRight.y = Math.ceil(y + this.height * 0.5);
-      this.pointsMap.bottomLeft.y = Math.ceil(y + this.height * 0.5);
-    }
+    this.helpers = new Helpers<Player>({
+      gameObject: this,
+      drawingConfig: {
+        isDrawText: true,
+        isDrawCenter: true,
+        isDrawDirection: true,
+      },
+    });
+    this.helpers.enable();
   }
 
   public update(gameData: SharedGameData): void {
@@ -289,47 +236,61 @@ export class Player extends GameObject {
     this.direction = None;
   }
 
-  private isDirection(direction: Direction): boolean {
+  public isDirection(direction: Direction): boolean {
     return this.direction === direction;
   }
 
   private moveForward(): void {
     this.posY -= this.speed;
-    this.updatePointsMap(null, this.posY);
+    this.pointsMap.updateRectangleMap({
+      x: null,
+      y: this.posY,
+      width: this.width,
+      height: this.height,
+    });
   }
 
   private moveRight(): void {
     this.posX += this.speed;
-    this.updatePointsMap(this.posX, null);
+    this.pointsMap.updateRectangleMap({
+      x: this.posX,
+      y: null,
+      width: this.width,
+      height: this.height,
+    });
   }
 
   private moveBakward(): void {
     this.posY += this.speed;
-    this.updatePointsMap(null, this.posY);
+    this.pointsMap.updateRectangleMap({
+      x: null,
+      y: this.posY,
+      width: this.width,
+      height: this.height,
+    });
   }
 
   private moveLeft(): void {
     this.posX -= this.speed;
-    this.updatePointsMap(this.posX, null);
+    this.pointsMap.updateRectangleMap({
+      x: this.posX,
+      y: null,
+      width: this.width,
+      height: this.height,
+    });
   }
 
   private handleHelpers(): void {
     const { inputHandler } = this.gameData;
 
     if (inputHandler.isKeyClicked(InputKey.X)) {
-      this.isShowHelpers = !this.isShowHelpers;
+      this.helpers.toggle();
     }
   }
 
   public draw(): void {
     this.drawPlayer();
-
-    if (this.isShowHelpers) {
-      this.drawHelpers({
-        isShowCorners: this.isShowCornerHelpers,
-        isShowCenters: this.isShowCornerHelpers,
-      });
-    }
+    this.helpers.draw();
   }
 
   public drawPlayer(): void {
@@ -344,297 +305,5 @@ export class Player extends GameObject {
       height: this.height,
       color: colors.nord.green,
     });
-  }
-
-  private drawHelpers({
-    isShowCorners,
-    isShowCenters,
-  }: {
-    isShowCorners?: boolean;
-    isShowCenters?: boolean;
-  }): void {
-    this.drawCenterHelper();
-    this.drawDirectionHelper();
-    this.drawTextHelpers();
-
-    if (isShowCorners) {
-      this.drawCornersHelpers();
-    }
-
-    if (isShowCenters) {
-      this.drawCenterHelpers();
-    }
-  }
-
-  private drawTextHelpers(): void {
-    const { topLeft } = this.pointsMap;
-
-    this.drawPositionHelpers(topLeft.x, topLeft.y);
-    this.drawSpeedHelper();
-  }
-
-  private drawPositionHelpers(x: number, y: number): void {
-    const { topCenter, topLeft, bottomLeft } = this.pointsMap;
-
-    if (topCenter.y >= this.height) {
-      canvas.drawText({
-        text: `x: ${x}`,
-        position: {
-          x: topLeft.x,
-          y: topLeft.y - 50,
-        },
-        fontSize: 16,
-        fontFamily: "Yanone Kaffeesatz",
-        color: colors.nord.red,
-      });
-
-      canvas.drawText({
-        text: `y: ${y}`,
-        position: {
-          x: topLeft.x,
-          y: topLeft.y - 30,
-        },
-        fontSize: 16,
-        fontFamily: "Yanone Kaffeesatz",
-        color: colors.nord.red,
-      });
-
-      return;
-    }
-
-    canvas.drawText({
-      text: `x: ${x}`,
-      position: {
-        x: bottomLeft.x,
-        y: bottomLeft.y + 50,
-      },
-      fontSize: 16,
-      fontFamily: "Yanone Kaffeesatz",
-      color: colors.nord.red,
-    });
-
-    canvas.drawText({
-      text: `y: ${y}`,
-      position: {
-        x: bottomLeft.x,
-        y: bottomLeft.y + 35,
-      },
-      fontSize: 16,
-      fontFamily: "Yanone Kaffeesatz",
-      color: colors.nord.red,
-    });
-  }
-
-  private drawSpeedHelper(): void {
-    const { topCenter, topLeft, bottomLeft } = this.pointsMap;
-
-    if (topCenter.y >= this.height) {
-      canvas.drawText({
-        text: `Speed: ${this.speed}`,
-        position: {
-          x: topLeft.x,
-          y: topLeft.y - 10,
-        },
-        fontSize: 16,
-        fontFamily: "Yanone Kaffeesatz",
-        color: colors.nord.red,
-      });
-      return;
-    }
-
-    canvas.drawText({
-      text: `Speed: ${this.speed}`,
-      position: {
-        x: bottomLeft.x,
-        y: bottomLeft.y + 15,
-      },
-      fontSize: 16,
-      fontFamily: "Yanone Kaffeesatz",
-      color: colors.nord.red,
-    });
-  }
-
-  private drawCenterHelper(): void {
-    const { center } = this.pointsMap;
-
-    const width = 10;
-    const height = 10;
-
-    canvas.drawRectangle({
-      position: {
-        x: center.x - width * 0.5,
-        y: center.y - height * 0.5,
-      },
-      width: 10,
-      height: 10,
-      color: colors.nord.red,
-    });
-  }
-
-  private drawCenterHelpers(): void {
-    const { topCenter, rightCenter, bottomCenter, leftCenter } = this.pointsMap;
-
-    const width = 10;
-    const height = 10;
-
-    //top center
-    canvas.drawRectangle({
-      position: {
-        x: topCenter.x - width * 0.5,
-        y: topCenter.y,
-      },
-      width,
-      height,
-      color: colors.nord.red,
-    });
-
-    //right center
-    canvas.drawRectangle({
-      position: {
-        x: rightCenter.x - width,
-        y: rightCenter.y - height * 0.5,
-      },
-      width,
-      height,
-      color: colors.nord.red,
-    });
-
-    //bottom center
-    canvas.drawRectangle({
-      position: {
-        x: bottomCenter.x - width * 0.5,
-        y: bottomCenter.y - height,
-      },
-      width,
-      height,
-      color: colors.nord.red,
-    });
-
-    //left center
-    canvas.drawRectangle({
-      position: {
-        x: leftCenter.x,
-        y: leftCenter.y - height * 0.5,
-      },
-      width,
-      height,
-      color: colors.nord.red,
-    });
-  }
-
-  private drawCornersHelpers(): void {
-    const { topLeft, topRight, bottomRight, bottomLeft } = this.pointsMap;
-
-    const width = 10;
-    const height = 10;
-
-    //top left
-    canvas.drawRectangle({
-      position: {
-        x: topLeft.x,
-        y: topLeft.y,
-      },
-      width,
-      height,
-      color: colors.nord.red,
-    });
-
-    //top right
-    canvas.drawRectangle({
-      position: {
-        x: topRight.x - width,
-        y: topRight.y,
-      },
-      width,
-      height,
-      color: colors.nord.red,
-    });
-
-    //bottom right
-    canvas.drawRectangle({
-      position: {
-        x: bottomRight.x - width,
-        y: bottomRight.y - height,
-      },
-      width,
-      height,
-      color: colors.nord.red,
-    });
-
-    //bottom left
-    canvas.drawRectangle({
-      position: {
-        x: bottomLeft.x,
-        y: bottomLeft.y - height,
-      },
-      width,
-      height,
-      color: colors.nord.red,
-    });
-  }
-
-  private drawDirectionHelper(): void {
-    const { Top, Right, Bottom, Left } = Direction;
-    const { center, topCenter, rightCenter, bottomCenter, leftCenter } =
-      this.pointsMap;
-
-    if (this.isDirection(Top)) {
-      canvas.drawLine({
-        start: {
-          x: center.x,
-          y: center.y,
-        },
-        end: {
-          x: topCenter.x,
-          y: topCenter.y,
-        },
-        color: colors.nord.red,
-      });
-      return;
-    }
-
-    if (this.isDirection(Right)) {
-      canvas.drawLine({
-        start: {
-          x: center.x,
-          y: center.y,
-        },
-        end: {
-          x: rightCenter.x,
-          y: rightCenter.y,
-        },
-        color: colors.nord.red,
-      });
-      return;
-    }
-
-    if (this.isDirection(Bottom)) {
-      canvas.drawLine({
-        start: {
-          x: center.x,
-          y: center.y,
-        },
-        end: {
-          x: bottomCenter.x,
-          y: bottomCenter.y,
-        },
-        color: colors.nord.red,
-      });
-      return;
-    }
-
-    if (this.isDirection(Left)) {
-      canvas.drawLine({
-        start: {
-          x: center.x,
-          y: center.y,
-        },
-        end: {
-          x: leftCenter.x,
-          y: leftCenter.y,
-        },
-        color: colors.nord.red,
-      });
-    }
   }
 }
