@@ -227,6 +227,7 @@ export class Player extends GameObject {
     }
 
     this.direction = None;
+    this.speed = 0;
   }
 
   public isDirection(direction: Direction): boolean {
