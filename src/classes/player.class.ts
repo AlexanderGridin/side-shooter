@@ -5,17 +5,13 @@ import { canvas } from "./canvas.class";
 import { GameObject } from "./game-object.class";
 import { Helpers } from "./helpers.class";
 import { PointsMap } from "./points-map.class";
-import { SharedGameData } from "./shared-game-data.class";
+import { inputHandler } from "./input-handler.class";
 
 interface CollisionData {
   topCollision: boolean;
   rightCollision: boolean;
   bottomCollision: boolean;
   leftCollision: boolean;
-}
-
-export class Point {
-  constructor(public x: number, public y: number) {}
 }
 
 export class Player extends GameObject {
@@ -31,7 +27,6 @@ export class Player extends GameObject {
   public direction!: Direction;
 
   private collisionData!: CollisionData;
-  private gameData!: SharedGameData;
 
   private readonly helpers!: Helpers<Player>;
 
@@ -56,13 +51,14 @@ export class Player extends GameObject {
         isDrawText: true,
         isDrawCenter: true,
         isDrawDirection: true,
+        // isDrawCorners: true,
+        // isDrawEdgeCenters: true,
       },
     });
     this.helpers.enable();
   }
 
-  public update(gameData: SharedGameData): void {
-    this.gameData = gameData;
+  public update(): void {
     this.collisionData = this.getCanvasCollisionData();
 
     this.handleWorldCollision();
@@ -86,7 +82,6 @@ export class Player extends GameObject {
   private handleWorldCollision(): void {
     const { topCollision, rightCollision, bottomCollision, leftCollision } =
       this.collisionData;
-    const { inputHandler } = this.gameData;
     const { W, D, S, A } = InputKey;
 
     if (topCollision && inputHandler.isKeyPressed(W)) {
@@ -183,7 +178,6 @@ export class Player extends GameObject {
   }
 
   private detectDirection(): void {
-    const { inputHandler } = this.gameData;
     const { W, S, A, D } = InputKey;
     const { Top, Right, Bottom, Left } = Direction;
 
@@ -209,7 +203,6 @@ export class Player extends GameObject {
   }
 
   private calculateMovement(): void {
-    const { inputHandler } = this.gameData;
     const { W, S, A, D } = InputKey;
     const { Top, Right, Bottom, Left, None } = Direction;
 
@@ -281,8 +274,6 @@ export class Player extends GameObject {
   }
 
   private handleHelpers(): void {
-    const { inputHandler } = this.gameData;
-
     if (inputHandler.isKeyClicked(InputKey.X)) {
       this.helpers.toggle();
     }

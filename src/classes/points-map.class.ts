@@ -1,4 +1,4 @@
-import { Point } from "./player.class";
+import { Point } from "./point.class";
 
 export class PointsMap {
   public center!: Point;
