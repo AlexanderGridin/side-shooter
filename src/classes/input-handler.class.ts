@@ -1,12 +1,14 @@
 import { InputKey } from "../enumerations/input-key.enum";
 
+class Key {
+  public isPressed = false;
+  public isPrevPressed = false;
+  public isClicked = false;
+}
+
 export class InputHandler {
-  private readonly keysPressedState: Record<string, boolean> = {};
-  private readonly keysPrevPressedState: Record<string, boolean> = {};
-
-  private readonly keysClickedState: Record<string, boolean> = {};
-
-  private lastKeyPressed!: InputKey;
+  private readonly keysMap: Record<string, Key> = {};
+  private keysForUpdate: Array<InputKey> = [];
 
   constructor() {
     this.initKeysStates();
@@ -15,10 +17,7 @@ export class InputHandler {
 
   private initKeysStates(): void {
     Object.values(InputKey).forEach((key: string) => {
-      this.keysPressedState[key] = false;
-      this.keysPrevPressedState[key] = false;
-
-      this.keysClickedState[key] = false;
+      this.keysMap[key] = new Key();
     });
   }
 
@@ -26,41 +25,54 @@ export class InputHandler {
     document.addEventListener("keydown", (e) => {
       const keyCode = e.code as InputKey;
 
-      if (this.keysPressedState[keyCode] !== undefined) {
-        this.lastKeyPressed = keyCode;
-        this.keysPressedState[keyCode] = true;
+      if (this.keysMap[keyCode] === undefined) {
+        return;
       }
+
+      this.keysMap[keyCode].isPressed = true;
+
+      if (this.keysForUpdate.indexOf(keyCode) !== -1) {
+        return;
+      }
+
+      this.keysForUpdate.push(keyCode);
     });
 
     document.addEventListener("keyup", (e) => {
       const keyCode = e.code as InputKey;
 
-      if (this.keysPressedState[keyCode] !== undefined) {
-        this.keysPressedState[keyCode] = false;
+      if (this.keysMap[keyCode] !== undefined) {
+        this.keysMap[keyCode].isPressed = false;
       }
     });
   }
 
   public update(): void {
-    const keyCodes: Array<string> = Object.values(InputKey);
+    const map = this.keysMap;
 
-    keyCodes.forEach((keyCode: string) => {
-      this.keysClickedState[keyCode] =
-        !this.keysPrevPressedState[keyCode] && this.keysPressedState[keyCode];
-      this.keysPrevPressedState[keyCode] = this.keysPressedState[keyCode];
+    this.keysForUpdate.forEach((keyCode: string) => {
+      const isClicked = !map[keyCode].isPrevPressed && map[keyCode].isPressed;
+
+      map[keyCode].isClicked = isClicked;
+      map[keyCode].isPrevPressed = map[keyCode].isPressed;
+
+      if (map[keyCode].isPressed) {
+        return;
+      }
+
+      this.keysForUpdate = this.keysForUpdate.filter(
+        (keyForUpdate) => keyForUpdate !== keyCode
+      );
     });
   }
 
   public isKeyPressed(key: InputKey): boolean {
-    return this.keysPressedState[key];
+    return this.keysMap[key].isPressed;
   }
 
   public isKeyClicked(key: InputKey): boolean {
-    return this.keysClickedState[key];
-  }
-
-  public isLastPressed(key: InputKey): boolean {
-    console.log(this.lastKeyPressed);
-    return this.lastKeyPressed === key;
+    return this.keysMap[key].isClicked;
   }
 }
+
+export const inputHandler = new InputHandler();

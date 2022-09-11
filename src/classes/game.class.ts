@@ -1,16 +1,15 @@
 import { GameObject } from "./game-object.class";
 import { SharedGameData } from "./shared-game-data.class";
-import { InputHandler } from "./input-handler.class";
 import { Player } from "./player.class";
 import { FpsCounter } from "./fps-counter.class";
 import { InputKey } from "../enumerations/input-key.enum";
 import { Grid } from "./grid.class";
 import { colors } from "../static-data/colors";
 import { canvas } from "./canvas.class";
+import { inputHandler } from "./input-handler.class";
 
 export class Game {
   private readonly data: SharedGameData = new SharedGameData();
-  private readonly inputHandler!: InputHandler;
 
   private gameObjects: Array<GameObject> = [];
   private prevTimeStamp = 0;
@@ -18,12 +17,10 @@ export class Game {
 
   private animationRequest!: number;
   private isGameStarted = false;
-  private isDrawHelpers = true;
+  private isDrawHelpers = false;
   private isWasFirstStart = false;
 
   constructor() {
-    this.inputHandler = new InputHandler();
-
     this.initSharedData();
     this.setupGameObjects();
     this.update();
@@ -60,7 +57,6 @@ export class Game {
 
   private initSharedData(): void {
     this.data.gameObjects = this.gameObjects;
-    this.data.inputHandler = this.inputHandler;
   }
 
   public start(): void {
@@ -114,7 +110,7 @@ export class Game {
   }
 
   public update(): void {
-    this.inputHandler.update();
+    inputHandler.update();
 
     this.gameObjects.forEach((gameObject: GameObject) =>
       gameObject.update(this.data)

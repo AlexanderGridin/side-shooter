@@ -22,6 +22,9 @@ interface ExpectedGameObject {
 export class Helpers<GameObjectType extends ExpectedGameObject> {
   private isDisabled = true;
 
+  private readonly markerWidth = 5;
+  private readonly markerHeight = 5;
+
   private readonly gameObject!: GameObjectType;
   private readonly drawingConfig: HelpersDrawingConfig =
     new HelpersDrawingConfig();
@@ -177,16 +180,16 @@ export class Helpers<GameObjectType extends ExpectedGameObject> {
   private drawCenter(): void {
     const { center } = this.gameObject.pointsMap;
 
-    const width = 10;
-    const height = 10;
+    const width = this.markerWidth;
+    const height = this.markerHeight;
 
     canvas.drawRectangle({
       position: {
         x: center.x - width * 0.5,
         y: center.y - height * 0.5,
       },
-      width: 10,
-      height: 10,
+      width,
+      height,
       color: colors.nord.red,
     });
   }
@@ -195,8 +198,8 @@ export class Helpers<GameObjectType extends ExpectedGameObject> {
     const { topCenter, rightCenter, bottomCenter, leftCenter } =
       this.gameObject.pointsMap;
 
-    const width = 10;
-    const height = 10;
+    const width = this.markerWidth;
+    const height = this.markerHeight;
 
     //top center
     canvas.drawRectangle({
@@ -247,8 +250,8 @@ export class Helpers<GameObjectType extends ExpectedGameObject> {
     const { topLeft, topRight, bottomRight, bottomLeft } =
       this.gameObject.pointsMap;
 
-    const width = 10;
-    const height = 10;
+    const width = this.markerWidth;
+    const height = this.markerHeight;
 
     //top left
     canvas.drawRectangle({
