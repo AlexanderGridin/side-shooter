@@ -192,8 +192,7 @@ export class Canvas {
 
 export const canvas = new Canvas({
   id: "game",
-  // width: 852,
-  width: 896,
+  width: 900,
   height: 512,
 });
 

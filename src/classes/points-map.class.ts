@@ -1,6 +1,14 @@
 import { Point } from "./point.class";
 
-export class PointsMap {
+export interface Entity {
+  posX: number;
+  posY: number;
+  width: number;
+  height: number;
+}
+
+export class PointsMap<EntityType extends Entity> {
+  private rectangle!: EntityType;
   public center!: Point;
 
   public topCenter!: Point;
@@ -13,16 +21,15 @@ export class PointsMap {
   public bottomRight!: Point;
   public bottomLeft!: Point;
 
-  public initForRectangle({
-    centerPoint,
-    width,
-    height,
-  }: {
-    centerPoint: Point;
-    width: number;
-    height: number;
-  }): void {
-    const { x, y } = centerPoint;
+  constructor(rectangle: EntityType) {
+    this.rectangle = rectangle;
+  }
+
+  public initForRectangle(rectangle: EntityType): void {
+    const x = this.rectangle.posX;
+    const y = this.rectangle.posY;
+    const width = this.rectangle.width;
+    const height = this.rectangle.height;
 
     this.center = new Point(x, y);
 
@@ -49,17 +56,12 @@ export class PointsMap {
     );
   }
 
-  public updateRectangleMap({
-    x,
-    y,
-    width,
-    height,
-  }: {
-    x: number | null;
-    y: number | null;
-    width: number;
-    height: number;
-  }): void {
+  public updateRectangleMap(): void {
+    const x = this.rectangle.posX;
+    const y = this.rectangle.posY;
+    const width = this.rectangle.width;
+    const height = this.rectangle.height;
+
     if (x !== null) {
       this.center.x = x;
 

@@ -1,4 +1,4 @@
-import { PointsMap } from "./points-map.class";
+import { Entity, PointsMap } from "./points-map.class";
 import { canvas } from "./canvas.class";
 import { colors } from "../static-data/colors";
 import { Direction } from "../enumerations/direction.enum";
@@ -12,7 +12,7 @@ class HelpersDrawingConfig {
 }
 
 interface ExpectedGameObject {
-  pointsMap: PointsMap;
+  pointsMap: PointsMap<Entity>;
   width: number;
   height: number;
   speed: number;
@@ -88,9 +88,9 @@ export class Helpers<GameObjectType extends ExpectedGameObject> {
   }
 
   private drawText(): void {
-    const { topLeft } = this.gameObject.pointsMap;
+    const { center } = this.gameObject.pointsMap;
 
-    this.drawPosition(topLeft.x, topLeft.y);
+    this.drawPosition(center.x, center.y);
     this.drawSpeed();
   }
 
