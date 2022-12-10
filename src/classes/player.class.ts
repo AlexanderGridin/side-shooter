@@ -7,26 +7,23 @@ import { Helpers } from "./helpers.class";
 import { PointsMap } from "./points-map.class";
 import { inputHandler } from "./input-handler.class";
 
-interface CollisionData {
-  topCollision: boolean;
-  rightCollision: boolean;
-  bottomCollision: boolean;
-  leftCollision: boolean;
-}
-
 export class Player extends GameObject {
   public readonly width = 64;
-  public readonly height = 64;
+  public readonly height = 128;
 
-  private initialSpeed = 5;
-  public speed = this.initialSpeed;
+  public speed = 5;
+
+  private readonly weight = 5;
+  private readonly gravity = 0.9;
+
+  private isOnTheGround = false;
+  private isInTheJump = false;
+  private isFirstUpdate = true;
 
   public posX!: number;
   public posY!: number;
-  public pointsMap = new PointsMap();
+  public pointsMap = new PointsMap<Player>(this);
   public direction!: Direction;
-
-  private collisionData!: CollisionData;
 
   private readonly helpers!: Helpers<Player>;
 
@@ -36,14 +33,7 @@ export class Player extends GameObject {
     this.posX = posX;
     this.posY = posY;
 
-    this.pointsMap.initForRectangle({
-      centerPoint: {
-        x: posX,
-        y: posY,
-      },
-      width: this.width,
-      height: this.height,
-    });
+    this.pointsMap.initForRectangle(this);
 
     this.helpers = new Helpers<Player>({
       gameObject: this,
@@ -51,145 +41,27 @@ export class Player extends GameObject {
         isDrawText: true,
         isDrawCenter: true,
         isDrawDirection: true,
-        // isDrawCorners: true,
-        // isDrawEdgeCenters: true,
+        isDrawCorners: true,
+        isDrawEdgeCenters: true,
       },
     });
     this.helpers.enable();
   }
 
   public update(): void {
-    this.collisionData = this.getCanvasCollisionData();
+    if (this.isFirstUpdate) {
+      this.isFirstUpdate = false;
+      return;
+    }
 
-    this.handleWorldCollision();
     this.detectDirection();
     this.calculateMovement();
     this.handleHelpers();
   }
 
-  private getCanvasCollisionData(): CollisionData {
-    const { width, height } = canvas;
-    const { topCenter, rightCenter, bottomCenter, leftCenter } = this.pointsMap;
-
-    return {
-      topCollision: topCenter.y - this.initialSpeed <= 0,
-      rightCollision: rightCenter.x + this.initialSpeed >= width,
-      bottomCollision: bottomCenter.y + this.initialSpeed >= height,
-      leftCollision: leftCenter.x - this.initialSpeed <= 0,
-    };
-  }
-
-  private handleWorldCollision(): void {
-    const { topCollision, rightCollision, bottomCollision, leftCollision } =
-      this.collisionData;
-    const { W, D, S, A } = InputKey;
-
-    if (topCollision && inputHandler.isKeyPressed(W)) {
-      this.handleTopWorldCollision();
-      return;
-    }
-
-    if (rightCollision && inputHandler.isKeyPressed(D)) {
-      this.handleRightWorldCollision();
-      return;
-    }
-
-    if (bottomCollision && inputHandler.isKeyPressed(S)) {
-      this.handleBottomWorldCollision();
-      return;
-    }
-
-    if (leftCollision && inputHandler.isKeyPressed(A)) {
-      this.handleLeftWorldCollision();
-      return;
-    }
-
-    this.resetSpeed();
-  }
-
-  private handleTopWorldCollision(): void {
-    const { topCenter } = this.pointsMap;
-
-    if (topCenter.y === this.initialSpeed) {
-      return;
-    }
-
-    if (topCenter.y - this.initialSpeed < 0) {
-      this.speed =
-        this.initialSpeed - Math.abs(topCenter.y - this.initialSpeed);
-      return;
-    }
-
-    this.speed = 0;
-  }
-
-  private handleRightWorldCollision(): void {
-    const { width } = canvas;
-    const { rightCenter } = this.pointsMap;
-
-    if (width - rightCenter.x === this.initialSpeed) {
-      return;
-    }
-
-    if (rightCenter.x + this.initialSpeed > width) {
-      this.speed =
-        this.initialSpeed - (rightCenter.x + this.initialSpeed - width);
-      return;
-    }
-
-    this.speed = 0;
-  }
-
-  private handleBottomWorldCollision(): void {
-    const { height } = canvas;
-    const { bottomCenter } = this.pointsMap;
-
-    if (height - bottomCenter.y === this.initialSpeed) {
-      return;
-    }
-
-    if (bottomCenter.y + this.initialSpeed > height) {
-      this.speed =
-        this.initialSpeed - (bottomCenter.y + this.initialSpeed - height);
-      return;
-    }
-
-    this.speed = 0;
-  }
-
-  private handleLeftWorldCollision(): void {
-    const { leftCenter } = this.pointsMap;
-
-    if (leftCenter.x === this.initialSpeed) {
-      return;
-    }
-
-    if (leftCenter.x - this.initialSpeed < 0) {
-      this.speed =
-        this.initialSpeed - Math.abs(leftCenter.x - this.initialSpeed);
-      return;
-    }
-
-    this.speed = 0;
-  }
-
-  private resetSpeed(): void {
-    this.speed = this.initialSpeed;
-  }
-
   private detectDirection(): void {
-    const { W, S, A, D } = InputKey;
-    const { Top, Right, Bottom, Left } = Direction;
-
-    if (inputHandler.isKeyClicked(W)) {
-      this.direction = Top;
-      return;
-    }
-
-    if (inputHandler.isKeyClicked(S)) {
-      this.direction = Bottom;
-      return;
-    }
+    const { A, D } = InputKey;
+    const { Right, Left } = Direction;
 
     if (inputHandler.isKeyClicked(D)) {
       this.direction = Right;
@@ -203,21 +75,27 @@ export class Player extends GameObject {
   }
 
   private calculateMovement(): void {
-    const { W, S, A, D } = InputKey;
-    const { Top, Right, Bottom, Left, None } = Direction;
+    const { A, D, W } = InputKey;
+    const { Right, Left, None } = Direction;
 
-    if (inputHandler.isKeyPressed(W) && this.isDirection(Top)) {
-      this.moveForward();
-      return;
+    if (!this.isOnTheGround && !this.isInTheJump) {
+      this.moveDown();
+    }
+
+    if (
+      inputHandler.isKeyClicked(W) &&
+      !this.isInTheJump &&
+      this.isOnTheGround
+    ) {
+      this.startJump();
+    }
+
+    if (this.isInTheJump) {
+      this.jump();
     }
 
     if (inputHandler.isKeyPressed(D) && this.isDirection(Right)) {
       this.moveRight();
-      return;
-    }
-
-    if (inputHandler.isKeyPressed(S) && this.isDirection(Bottom)) {
-      this.moveBakward();
       return;
     }
 
@@ -227,51 +105,66 @@ export class Player extends GameObject {
     }
 
     this.direction = None;
-    this.speed = 0;
+  }
+
+  private moveDown(): void {
+    const offset = Math.ceil(this.weight * this.gravity);
+
+    if (this.pointsMap.bottomCenter.y + offset >= canvas.height) {
+      this.posY = canvas.height - Math.ceil(this.height / 2);
+      this.pointsMap.updateRectangleMap();
+
+      this.isOnTheGround = true;
+    } else {
+      this.posY += offset;
+      this.pointsMap.updateRectangleMap();
+    }
+  }
+
+  private startJump(): void {
+    this.isInTheJump = true;
+    this.isOnTheGround = false;
+  }
+
+  private jump(): void {
+    const jumpSpeed = 10;
+    const jumpHeight = 150;
+
+    const topLimit = canvas.height - this.height - jumpHeight;
+    const offset = this.pointsMap.topCenter.y - jumpSpeed;
+
+    if (offset <= topLimit) {
+      this.isInTheJump = false;
+    }
+
+    this.posY -= jumpSpeed;
+    this.pointsMap.updateRectangleMap();
   }
 
   public isDirection(direction: Direction): boolean {
     return this.direction === direction;
   }
 
-  private moveForward(): void {
-    this.posY -= this.speed;
-    this.pointsMap.updateRectangleMap({
-      x: null,
-      y: this.posY,
-      width: this.width,
-      height: this.height,
-    });
-  }
-
   private moveRight(): void {
-    this.posX += this.speed;
-    this.pointsMap.updateRectangleMap({
-      x: this.posX,
-      y: null,
-      width: this.width,
-      height: this.height,
-    });
-  }
+    if (this.pointsMap.rightCenter.x + this.speed >= canvas.width) {
+      this.posX = canvas.width - Math.ceil(this.width / 2);
+      this.pointsMap.updateRectangleMap();
+      return;
+    }
 
-  private moveBakward(): void {
-    this.posY += this.speed;
-    this.pointsMap.updateRectangleMap({
-      x: null,
-      y: this.posY,
-      width: this.width,
-      height: this.height,
-    });
+    this.posX += this.speed;
+    this.pointsMap.updateRectangleMap();
   }
 
   private moveLeft(): void {
+    if (this.pointsMap.leftCenter.x - this.speed <= 0) {
+      this.posX = 0 + Math.ceil(this.width / 2);
+      this.pointsMap.updateRectangleMap();
+      return;
+    }
+
     this.posX -= this.speed;
-    this.pointsMap.updateRectangleMap({
-      x: this.posX,
-      y: null,
-      width: this.width,
-      height: this.height,
-    });
+    this.pointsMap.updateRectangleMap();
   }
 
   private handleHelpers(): void {
@@ -281,11 +174,11 @@ export class Player extends GameObject {
   }
 
   public draw(): void {
-    this.drawPlayer();
+    this.drawSelf();
     this.helpers.draw();
   }
 
-  public drawPlayer(): void {
+  public drawSelf(): void {
     const { topLeft } = this.pointsMap;
 
     canvas.drawRectangle({
@@ -295,7 +188,7 @@ export class Player extends GameObject {
       },
       width: this.width,
       height: this.height,
-      color: colors.nord.green,
+      color: colors.nord.yellow,
     });
   }
 }
